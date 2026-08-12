@@ -1,31 +1,15 @@
 /**
- * Bookmarks library — hybrid Firestore + localStorage store.
+ * Bookmarks library — localStorage-only store.
  *
- * Anonymous (not signed in) → bookmarks live in localStorage under `oriz:blog:bookmarks`.
- * Signed-in user → bookmarks live at `/blog/users/{uid}/bookmarks/{postSlug}`.
- *   On sign-in, any pending localStorage bookmarks are merged into Firestore
- *   (last-write-wins by `savedAt`).
+ * Bookmarks live in localStorage under `oriz:blog:bookmarks` (per-device).
+ * Free, client-side, no backend, no auth dependency.
  *
  * The post-detail Bookmark button + /bookmarks page both call into this
- * module — never touch localStorage / Firestore directly elsewhere.
+ * module — never touch localStorage directly elsewhere.
  *
- * Auth is Clerk — pass `{ id: clerk.user.id }` as the `user` param, or
- * use the `useBookmarks` hook (if available) which wires Clerk automatically.
+ * The `user` param is accepted for API compatibility with callers but is
+ * unused (bookmarks are device-local; no cross-device sync).
  */
-
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  onSnapshot,
-  orderBy,
-  query,
-  setDoc,
-  type Unsubscribe,
-} from 'firebase/firestore'
-import { db } from './firebase'
 
 /** Minimal user shape — compatible with Clerk's user object. */
 export interface AuthUser {
@@ -33,7 +17,7 @@ export interface AuthUser {
 }
 
 export interface Bookmark {
-  /** post id, e.g. "ai-rag-pipelines-real-world" or "100-best-teen-dramas/part-1-foundation-90s" */
+  /** post id, e.g. "ai-rag-pipelines-real-world" */
   slug: string
   url: string
   title: string
@@ -63,93 +47,43 @@ function writeLocal(items: Bookmark[]): void {
   }
 }
 
-function safeId(slug: string): string {
-  // Firestore doc IDs cannot contain '/'.
-  return slug.replace(/\//g, '__')
-}
-
-function userBookmarksCol(uid: string) {
-  return collection(db, 'blog', 'users', uid, 'bookmarks')
-}
-
-/** True iff `slug` is bookmarked for the current user (or anon). */
-export async function isBookmarked(slug: string, user: AuthUser | null): Promise<boolean> {
-  if (user) {
-    const ref = doc(db, 'blog', 'users', user.id, 'bookmarks', safeId(slug))
-    const snap = await getDoc(ref)
-    return snap.exists()
-  }
+/** True iff `slug` is bookmarked. */
+export async function isBookmarked(slug: string, _user: AuthUser | null): Promise<boolean> {
   return readLocal().some((b) => b.slug === slug)
 }
 
 /** Add a bookmark. Optimistic — caller can re-render immediately. */
-export async function addBookmark(b: Bookmark, user: AuthUser | null): Promise<void> {
-  if (user) {
-    const ref = doc(db, 'blog', 'users', user.id, 'bookmarks', safeId(b.slug))
-    await setDoc(ref, b, { merge: true })
-    return
-  }
+export async function addBookmark(b: Bookmark, _user: AuthUser | null): Promise<void> {
   const items = readLocal().filter((x) => x.slug !== b.slug)
   items.push(b)
   writeLocal(items)
 }
 
 /** Remove a bookmark. */
-export async function removeBookmark(slug: string, user: AuthUser | null): Promise<void> {
-  if (user) {
-    const ref = doc(db, 'blog', 'users', user.id, 'bookmarks', safeId(slug))
-    await deleteDoc(ref)
-    return
-  }
+export async function removeBookmark(slug: string, _user: AuthUser | null): Promise<void> {
   writeLocal(readLocal().filter((b) => b.slug !== slug))
 }
 
 /** Read all bookmarks (one-shot). */
-export async function listBookmarks(user: AuthUser | null): Promise<Bookmark[]> {
-  if (user) {
-    const q = query(userBookmarksCol(user.id), orderBy('savedAt', 'desc'))
-    const snap = await getDocs(q)
-    return snap.docs.map((d) => d.data() as Bookmark)
-  }
+export async function listBookmarks(_user: AuthUser | null): Promise<Bookmark[]> {
   return readLocal().sort((a, b) => b.savedAt.localeCompare(a.savedAt))
 }
 
 /**
  * Subscribe to bookmark updates. Returns an unsubscribe.
- * For anon users this is a one-shot read (bookmarks are tab-local).
+ * localStorage-backed, so this is a one-shot read.
  */
-export function watchBookmarks(user: AuthUser | null, cb: (items: Bookmark[]) => void): Unsubscribe {
-  if (user) {
-    const q = query(userBookmarksCol(user.id), orderBy('savedAt', 'desc'))
-    return onSnapshot(q, (snap) => cb(snap.docs.map((d) => d.data() as Bookmark)))
-  }
+export function watchBookmarks(_user: AuthUser | null, cb: (items: Bookmark[]) => void): () => void {
   cb(readLocal().sort((a, b) => b.savedAt.localeCompare(a.savedAt)))
-  // localStorage doesn't fire across tabs reliably; minimal fake unsubscribe.
   return () => {}
 }
 
-/**
- * Merge any anon bookmarks into Firestore on sign-in.
- * Last-write-wins by `savedAt`. Empties localStorage on success.
- */
-export async function mergeOnSignIn(user: AuthUser): Promise<number> {
-  const local = readLocal()
-  if (local.length === 0) return 0
-  const writes = local.map(async (b) => {
-    const ref = doc(db, 'blog', 'users', user.id, 'bookmarks', safeId(b.slug))
-    const existing = await getDoc(ref)
-    if (existing.exists()) {
-      const cur = existing.data() as Bookmark
-      if (cur.savedAt >= b.savedAt) return
-    }
-    await setDoc(ref, b, { merge: true })
-  })
-  await Promise.all(writes)
-  writeLocal([])
-  return local.length
+/** No-op — kept for API compatibility (no backend to merge into). */
+export async function mergeOnSignIn(_user: AuthUser): Promise<number> {
+  return 0
 }
 
-// ---- Recently viewed (always localStorage; never synced) ---------------
+// ---- Recently viewed (localStorage; never synced) ----------------------
 
 const RV_KEY = 'oriz:blog:recent'
 const RV_MAX = 10

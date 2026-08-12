@@ -35,7 +35,6 @@
     "astro-expressive-code": "^0.40.0",
     "astro-pagefind": "^1.8.3",
     "@clerk/clerk-react": "^5.0.0",
-    "firebase": "^12.0.0",
     "fuse.js": "^7.1.0",
     "katex": "^0.16.11",
     "lucide-react": "^0.510.0",
