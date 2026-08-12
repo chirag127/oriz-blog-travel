@@ -1,24 +1,26 @@
 ---
 /*
- * BaseLayout — single page shell for every oriz-blog route (v2).
+ * BaseLayout — single page shell for oriz / atlas (travel).
  *
- * Per-app divergent Header (sweep #5 revert). Footer + Sidebar wrapper +
- * BottomBar structure come from @chirag127/astro-chrome; sidebar slot and
- * bottombar actions are app-specific.
+ * ARCHETYPE: full-bleed hero + OVERLAY nav strip + horizontal route rail.
+ * No persistent left sidebar (that was the sibling card-grid shell) — the
+ * overlay Header IS the navigation. `main` runs full-width; pages own their
+ * own inner measure. Sidebar is opt-in only (`showSidebar`) for deep archive
+ * views; the homepage + articles run edge-to-edge under the floating strip.
  */
 import '~/styles/global.css'
 import '~/styles/oriz-ui-overrides.css'
 import 'katex/dist/katex.min.css'
 import '~/styles/tokens.css'
-import { ClientRouter } from 'astro:transitions'
-import AppSidebarContent from '~/components/AppSidebarContent.astro'
 import BottomBar from '~/components/chrome/BottomBar.astro'
 import ConsentBanner from '~/components/chrome/ConsentBanner.astro'
 import FamilyChrome from '~/components/chrome/FamilyChrome.astro'
-import Sidebar from '~/components/chrome/Sidebar.astro'
 import FeedDiscovery from '~/components/FeedDiscovery.astro'
 import Footer from '~/components/Footer.astro'
 import Header from '~/components/Header.astro'
+import Sidebar from '~/components/chrome/Sidebar.astro'
+import AppSidebarContent from '~/components/AppSidebarContent.astro'
+import { ClientRouter } from 'astro:transitions'
 import { bottomBarActions } from '~/data/bottombar-actions'
 
 interface Props {
@@ -31,11 +33,15 @@ interface Props {
   type?: 'website' | 'article'
   pubDate?: Date
   updatedDate?: Date
-  hideSidebar?: boolean
+  /** Opt-in secondary sidebar for deep archive views. Off by default —
+      the overlay Header is the navigation. */
+  showSidebar?: boolean
+  /** Full-bleed page (hero owns the top). Suppresses the default top gutter. */
+  bleed?: boolean
 }
 
 const {
-  title = 'oriz / travel',
+  title = 'Atlas — oriz',
   description = 'Field notes for Indian travellers — budget routes, solo-travel safety, and digital-nomad visas, logged mile by mile.',
   canonical = `https://travel-blog.oriz.in${Astro.url.pathname}`,
   noindex = false,
@@ -44,16 +50,17 @@ const {
   type = 'website',
   pubDate,
   updatedDate,
-  hideSidebar = false,
+  showSidebar = false,
+  bleed = false,
 } = Astro.props
 
 const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT
 const beaconToken = import.meta.env.PUBLIC_CF_BEACON_TOKEN
 const ga4Id = import.meta.env.PUBLIC_GA4_ID
 const ogImage = image ? new URL(image, 'https://travel-blog.oriz.in').toString() : undefined
-const visibleBottomBarActions = hideSidebar
-  ? bottomBarActions.filter((action) => action.label !== 'Menu')
-  : bottomBarActions
+const visibleBottomBarActions = showSidebar
+  ? bottomBarActions
+  : bottomBarActions.filter((action) => action.label !== 'Menu')
 ---
 
 <!doctype html>
@@ -70,7 +77,7 @@ const visibleBottomBarActions = hideSidebar
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:type" content={type} />
-    <meta property="og:site_name" content="oriz / blog" />
+    <meta property="og:site_name" content="oriz / atlas" />
     {ogImage && <meta property="og:image" content={ogImage} />}
     {type === 'article' && pubDate && (
       <meta property="article:published_time" content={pubDate.toISOString()} />
@@ -138,14 +145,18 @@ const visibleBottomBarActions = hideSidebar
       </>
     )}
   </head>
-  <body>
-    <FamilyChrome slug="oriz-pages-blog-app" title="Blog" accent="var(--accent)" />
+  <body data-bleed={bleed ? 'true' : 'false'}>
+    <FamilyChrome slug="oriz-pages-blog-app" title="Atlas" accent="var(--accent)" />
     <a href="#main" class="skip-link">Skip to content</a>
     <Header />
-    <div class="layout-body">
-      {!hideSidebar && <Sidebar><AppSidebarContent /></Sidebar>}
-      <main id="main"><slot /></main>
-    </div>
+    {showSidebar ? (
+      <div class="layout-body">
+        <Sidebar><AppSidebarContent /></Sidebar>
+        <main id="main"><slot /></main>
+      </div>
+    ) : (
+      <main id="main" class="main-full"><slot /></main>
+    )}
     <Footer />
     <BottomBar actions={visibleBottomBarActions} />
     <ConsentBanner />
@@ -166,4 +177,9 @@ const visibleBottomBarActions = hideSidebar
   @media (max-width: 767px) {
     .layout-body { display: block; }
   }
+  .main-full { display: block; }
+  /* Full-bleed pages: pull the hero up under the sticky overlay strip so the
+     nav floats OVER it. The strip is 56px sticky; the sentinel + hero own the
+     top of the viewport. */
+  body[data-bleed='true'] .main-full { margin-top: calc(-56px - 1px); }
 </style>

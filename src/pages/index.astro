@@ -1,20 +1,24 @@
 ---
-import SeriesSpine from '~/components/SeriesSpine.astro'
 /**
- * /  — oriz-blog-travel homepage ("Field Log" front page).
+ * /  — oriz / atlas homepage (ARCHETYPE: full-bleed hero + overlay nav +
+ * horizontal route carousel).
  *
- * Above the fold: a traveller's logbook opening. A mono COORDINATE DATELINE
- * (28.6139°N 77.2090°E · IST · Log №N), a big Fraunces thesis headline, a
- * Newsreader dek, and the route-spine (`●━━●╌╌○`) marking the series currently
- * on the road. Below: three hairline strata:
- *   1. ON THE ROAD — series route-lines in progress
- *   2. LATEST      — last 7 dispatches, each with its travel desk kicker
- *   3. BY REGION   — one typographic row, each desk in its legend colour
+ * 1. HERO — full-viewport (100svh) contour-topography field. An inline SVG
+ *    topo map (concentric contour lines + a drawn expedition route) is the
+ *    thesis surface. A coordinate dateline, a big Fraunces headline, and the
+ *    "current expedition" spine sit overlaid. The overlay Header floats on top.
+ *    A #hero-end sentinel toggles the header from transparent → solid.
  *
- * No cover images, no cards, no stock-photo hero. Structure encodes a route.
- * Desks (Routes/Budget/Stories/Safety/Field notes) each carry a marker colour.
+ * 2. ROUTES RAIL — horizontal scroll-snap carousel of route-coupon cards (one
+ *    per dispatch), a drawn route-line threading them like legs of a trip.
+ *    NOT a vertical card grid, NOT a text logbook — a rail you scroll sideways.
+ *
+ * 3. LATEST + BY REGION — compact strata below the rail.
+ *
+ * No stock-photo hero. Structure encodes a route (rail = itinerary legs).
  */
 import BaseLayout from '~/layouts/BaseLayout.astro'
+import SeriesSpine from '~/components/SeriesSpine.astro'
 import {
   getCategoriesWithCounts,
   getPostsInSeries,
@@ -30,14 +34,10 @@ import { SITE_CONFIG } from '~/lib/config'
 
 const allPosts = await getPublishedPosts()
 const lead = allPosts[0]
-const recentPosts = allPosts.slice(1, 8)
+const railPosts = allPosts.slice(0, 8)
+const recentPosts = allPosts.slice(0, 6)
 
 const seriesAll = await getSeriesWithCounts()
-// In-progress: series where at least one post exists. We model "published"
-// as the count of currently-published parts. Total is exposed as a heuristic
-// (count + a small tail of "drafting" dots) — for v1 of the v2 design, we
-// just use count for total and count for published, and animate the last
-// dot as `current` so the spine has the signature glyph (`⦿`) visible.
 type InProgress = {
   name: string
   slug: string
@@ -45,18 +45,14 @@ type InProgress = {
   published: number
   current: number
   latest: Date
-  parts: Awaited<ReturnType<typeof getPostsInSeries>>
 }
 const inProgress: InProgress[] = []
-for (const { series, count } of seriesAll.slice(0, 4)) {
+for (const { series, count } of seriesAll.slice(0, 1)) {
   const parts = await getPostsInSeries(series)
   const latest = parts.reduce(
     (max, p) => (p.data.pubDate > max ? p.data.pubDate : max),
     parts[0].data.pubDate,
   )
-  // Total must never be less than what's already published (otherwise the
-  // label reads "part 29 of 12"). Use the larger of: published count, the
-  // largest explicit `part` field, or published+1 to hint one more coming.
   const explicitMax = parts.reduce((mx, p) => {
     const v = typeof p.data.part === 'number' ? p.data.part : Number(p.data.part)
     return Number.isFinite(v) ? Math.max(mx, v) : mx
@@ -67,29 +63,21 @@ for (const { series, count } of seriesAll.slice(0, 4)) {
     slug: slugifyTag(series),
     total,
     published: count,
-    current: count, // last filled dot is "current"
+    current: count,
     latest,
-    parts,
   })
 }
-inProgress.sort((a, b) => b.latest.valueOf() - a.latest.valueOf())
 
 const cats = await getCategoriesWithCounts()
 
-// Coordinate dateline — Delhi origin fix + IST + running log number. The
-// coordinates are the traveller's "you are here": Connaught Place, New Delhi.
 const now = new Date()
 const dateline = now.toLocaleDateString('en-GB', {
-  weekday: 'long',
   day: 'numeric',
-  month: 'long',
+  month: 'short',
   year: 'numeric',
 })
-const logNo = allPosts.length // running dispatch count = log entry number
-const leadVertical = lead ? postVertical(lead) : 'personal'
-const leadRt = lead ? (lead.data.readingTime ?? readingTimeFor(lead)) : ''
+const logNo = allPosts.length
 
-// "Days since" helper for the in-progress rail.
 function ago(date: Date): string {
   const days = Math.floor((Date.now() - date.valueOf()) / 86_400_000)
   if (days < 1) return 'today'
@@ -112,94 +100,128 @@ const jsonLd = {
 }
 ---
 
-<BaseLayout
-  title="oriz / travel"
-  description={SITE_CONFIG.description}
-  jsonLd={jsonLd}
-  hideSidebar
->
-  <div class="container-page">
-    {/* Masthead — the logbook opening. Coordinate dateline + thesis. */}
-    <section class="masthead" aria-label="Front page">
-      <div class="dateline mono">
-        <span class="dateline-coord">28.6139&deg;N 77.2090&deg;E</span>
-        <span class="dateline-sep" aria-hidden="true">·</span>
-        <span class="dateline-tz">New Delhi · IST</span>
-        <span class="dateline-sep" aria-hidden="true">·</span>
-        <span class="dateline-count">Log &#8470;<span class="count">{logNo}</span></span>
-        <span class="dateline-sep" aria-hidden="true">·</span>
-        <span class="dateline-date">{dateline}</span>
-      </div>
-      <p class="nameplate">Notes from the long way round.</p>
-      <p class="nameplate-sub">Budget routes, solo-travel safety, and digital-nomad visas for Indian travellers — logged mile by mile, revised on the road.</p>
+<BaseLayout title="Atlas — oriz" description={SITE_CONFIG.description} jsonLd={jsonLd} bleed>
+  {/* ── HERO: full-bleed contour-topography field ─────────────────────── */}
+  <section class="hero" aria-label="Atlas front">
+    <svg class="hero-topo" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      {/* concentric contour lines — a summit read from above */}
+      {Array.from({ length: 11 }).map((_, i) => {
+        const rx = 120 + i * 78
+        const ry = 78 + i * 52
+        return (
+          <ellipse
+            cx="820" cy="300" rx={rx} ry={ry}
+            transform="rotate(-18 820 300)"
+            fill="none"
+            stroke="var(--rule-strong)"
+            stroke-width={i === 4 ? 1.4 : 0.8}
+            opacity={0.55 - i * 0.03}
+          />
+        )
+      })}
+      {/* a second, lower massif */}
+      {Array.from({ length: 7 }).map((_, i) => (
+        <ellipse
+          cx="220" cy="640" rx={70 + i * 60} ry={44 + i * 40}
+          transform="rotate(12 220 640)"
+          fill="none" stroke="var(--rule)" stroke-width="0.8" opacity={0.4 - i * 0.03}
+        />
+      ))}
+      {/* the drawn expedition route — dashed, with waypoint dots */}
+      <path
+        class="hero-route"
+        d="M60 700 C 260 620, 300 520, 470 500 S 700 470, 760 340 S 900 200, 1120 150"
+        fill="none" stroke="var(--accent)" stroke-width="2.5"
+        stroke-dasharray="2 10" stroke-linecap="round"
+      />
+      <g fill="var(--sun)">
+        <circle cx="60" cy="700" r="5" />
+        <circle cx="470" cy="500" r="4" />
+        <circle cx="760" cy="340" r="4" />
+      </g>
+      <circle cx="1120" cy="150" r="6" fill="var(--accent)" />
+    </svg>
+
+    <div class="hero-wrap">
+      <p class="hero-dateline mono">
+        <span class="hd-coord">28.6139&deg;N&nbsp;77.2090&deg;E</span>
+        <span class="hd-sep" aria-hidden="true">·</span>
+        <span class="hd-tz">New Delhi&nbsp;·&nbsp;IST</span>
+        <span class="hd-sep" aria-hidden="true">·</span>
+        <span class="hd-log">Log&nbsp;&#8470;{logNo}</span>
+        <span class="hd-sep" aria-hidden="true">·</span>
+        <span class="hd-date">{dateline}</span>
+      </p>
+
+      <h1 class="hero-title">The long way round, mapped.</h1>
+      <p class="hero-dek">
+        Budget routes, solo-travel safety, and digital-nomad visas for Indian
+        travellers — logged mile by mile, revised on the road.
+      </p>
+
       {inProgress[0] && (
-        <p class="masthead-spine">
-          <span class="masthead-spine-label mono">On the road</span>
+        <p class="hero-expedition">
+          <span class="he-label mono">Currently on the road</span>
           <SeriesSpine
             total={inProgress[0].total}
             published={inProgress[0].published}
             current={inProgress[0].current}
             size="md"
           />
-          <a class="masthead-spine-name" href={`/series/${inProgress[0].slug}/`}>{inProgress[0].name}</a>
+          <a class="he-name" href={`/series/${inProgress[0].slug}/`}>{inProgress[0].name}</a>
         </p>
       )}
-    </section>
 
-    {lead && (
-      <>
-        <hr class="rule-heavy" />
-        <section class="lead" data-vertical={leadVertical} aria-labelledby="lead-title">
-          <a class="lead-link" href={`/blog/${lead.id}`}>
-            <span class="lead-kicker mono">
-              <span class="lead-tick" aria-hidden="true"></span>
-              <span class="lead-desk">{verticalLabel(leadVertical)}</span>
-              <span class="lead-flag">Lead dispatch</span>
-            </span>
-            <h2 id="lead-title" class="lead-title">{lead.data.title}</h2>
-            <p class="lead-dek">{lead.data.description}</p>
-            <span class="lead-meta mono">
-              <time datetime={lead.data.pubDate.toISOString()}>{lead.data.pubDate.toISOString().slice(0, 10)}</time>
-              <span aria-hidden="true">·</span>
-              <span>{leadRt}</span>
-            </span>
-          </a>
-        </section>
-      </>
-    )}
+      <a class="hero-scroll mono" href="#routes">
+        <span>Scroll the routes</span>
+        <span class="hs-arrow" aria-hidden="true">&#8595;</span>
+      </a>
+    </div>
+    <div id="hero-end" class="hero-sentinel" aria-hidden="true"></div>
+  </section>
 
+  {/* ── ROUTES RAIL: horizontal scroll-snap carousel ──────────────────── */}
+  <section id="routes" class="rail-section" aria-labelledby="rail-h">
+    <div class="rail-head container-page">
+      <h2 id="rail-h" class="rail-h">Routes</h2>
+      <p class="rail-sub mono">Scroll → for {allPosts.length} logged dispatches</p>
+    </div>
+    <ul class="rail" aria-label="Route dispatches">
+      {railPosts.map((p, i) => {
+        const v = postVertical(p)
+        return (
+          <li class="coupon" data-vertical={v}>
+            <a class="coupon-link" href={`/blog/${p.id}`}>
+              <span class="coupon-leg mono">Leg&nbsp;{String(i + 1).padStart(2, '0')}</span>
+              <span class="coupon-desk mono">
+                <span class="coupon-tick" aria-hidden="true"></span>{verticalLabel(v)}
+              </span>
+              <span class="coupon-title">{p.data.title}</span>
+              <span class="coupon-dek">{p.data.description}</span>
+              <span class="coupon-foot mono">
+                <time datetime={p.data.pubDate.toISOString()}>{p.data.pubDate.toISOString().slice(0, 10)}</time>
+                <span aria-hidden="true">·</span>
+                <span>{p.data.readingTime ?? readingTimeFor(p)}</span>
+              </span>
+            </a>
+          </li>
+        )
+      })}
+      <li class="coupon coupon-all">
+        <a class="coupon-link coupon-all-link" href="/archive/">
+          <span class="coupon-all-arrow" aria-hidden="true">&#8594;</span>
+          <span class="coupon-all-label">Open the full logbook</span>
+          <span class="coupon-foot mono">{allPosts.length} dispatches</span>
+        </a>
+      </li>
+    </ul>
+  </section>
+
+  <div class="container-page">
     <hr class="hairline" />
 
-    {/* Stratum 1 — ON THE ROAD. */}
-    {inProgress.length > 0 && (
-      <section class="stratum stratum-progress" aria-labelledby="s-progress">
-        <h2 id="s-progress" class="stratum-h mono">On the road</h2>
-        <ul class="progress-list">
-          {inProgress.map((s) => (
-            <li class="progress-row">
-              <a class="progress-link" href={`/series/${s.slug}/`}>
-                <span class="progress-name">{s.name}</span>
-                <span class="progress-meta mono">part {s.published} of {s.total}</span>
-                <span class="progress-spine-mount">
-                  <SeriesSpine
-                    total={s.total}
-                    published={s.published}
-                    current={s.current}
-                    size="md"
-                  />
-                </span>
-                <span class="progress-ago mono">{ago(s.latest)}</span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
-    )}
-
-    <hr class="hairline" />
-
-    {/* Stratum 2 — LATEST. */}
-    <section class="stratum stratum-recent" aria-labelledby="s-recent">
+    {/* ── LATEST ─────────────────────────────────────────────────────── */}
+    <section class="stratum" aria-labelledby="s-recent">
       <h2 id="s-recent" class="stratum-h mono">Latest dispatches</h2>
       <ul class="recent-list">
         {recentPosts.map((p) => (
@@ -213,21 +235,17 @@ const jsonLd = {
                   <span class="recent-tick" aria-hidden="true"></span>{verticalLabel(postVertical(p))}
                 </span>
                 <span class="recent-title">{p.data.title}</span>
-                <span class="recent-dek">{p.data.description}</span>
               </span>
-              <span class="recent-rt mono">{p.data.readingTime ?? readingTimeFor(p)}</span>
+              <span class="recent-ago mono">{ago(p.data.pubDate)}</span>
             </a>
           </li>
         ))}
       </ul>
-      <p class="all-link">
-        <a href="/archive/">all {allPosts.length} dispatches in the logbook →</a>
-      </p>
     </section>
 
     <hr class="hairline" />
 
-    {/* Stratum 3 — BY REGION (single typographic row). */}
+    {/* ── BY REGION (legend row) ─────────────────────────────────────── */}
     {cats.length > 0 && (
       <section class="stratum stratum-cats" aria-labelledby="s-cats">
         <h2 id="s-cats" class="stratum-h mono">By region</h2>
@@ -249,17 +267,52 @@ const jsonLd = {
 
 <style>
   .container-page {
-    max-width: 920px;
+    max-width: var(--container-page, 1100px);
     margin-inline: auto;
     padding-inline: clamp(1.25rem, 4vw, 2rem);
   }
 
-  /* ── Masthead (front page) ─────────────────────────────────────────── */
-
-  .masthead {
-    padding-block: clamp(1.75rem, 5vw, 3rem) 1.5rem;
+  /* ── HERO ──────────────────────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 90% at 78% 12%, color-mix(in oklab, var(--paper-2) 70%, transparent), transparent 60%),
+      var(--paper);
+    border-bottom: 1px solid var(--rule);
   }
-  .dateline {
+  .hero-topo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+  .hero-route {
+    stroke-dashoffset: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-route {
+      stroke-dasharray: 6 1000;
+      animation: draw-route 2.4s var(--ease-out, ease) 0.2s forwards;
+    }
+    @keyframes draw-route {
+      to { stroke-dasharray: 2 10; }
+    }
+  }
+  .hero-wrap {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: var(--container-page, 1100px);
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 4vw, 2rem);
+    padding-block: clamp(6rem, 14vh, 9rem) clamp(2.5rem, 8vh, 5rem);
+  }
+  .hero-dateline {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -268,103 +321,246 @@ const jsonLd = {
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--ink-mute);
-    padding-bottom: 0.875rem;
-    border-bottom: 1px solid var(--rule);
-    margin-bottom: 1.5rem;
+    margin: 0 0 1.5rem;
   }
-  .dateline-coord { color: var(--accent); font-weight: 700; letter-spacing: 0.04em; }
-  .dateline-tz { color: var(--sun); }
-  .dateline-sep { color: var(--rule-strong, var(--rule)); }
-  .dateline .count { color: var(--ink); }
-  .nameplate {
+  .hd-coord { color: var(--accent); font-weight: 700; letter-spacing: 0.04em; }
+  .hd-tz { color: var(--sun); }
+  .hd-sep { color: var(--rule-strong); }
+  .hero-title {
     font-family: var(--font-display);
-    font-size: clamp(2.25rem, 7vw, 4rem);
+    font-size: clamp(2.75rem, 9vw, 6rem);
     font-weight: 600;
-    letter-spacing: -0.03em;
-    line-height: 1.0;
+    letter-spacing: -0.035em;
+    line-height: 0.98;
     color: var(--ink);
     margin: 0;
-    max-width: 16ch;
+    max-width: 15ch;
+    text-wrap: balance;
   }
-  .nameplate-sub {
+  .hero-dek {
     font-family: var(--font-display);
-    font-size: clamp(1.0625rem, 2vw, 1.3125rem);
+    font-size: clamp(1.0625rem, 2vw, 1.375rem);
     line-height: 1.45;
     color: var(--ink-mute);
-    margin: 1rem 0 0;
-    max-width: 52ch;
+    margin: 1.25rem 0 0;
+    max-width: 54ch;
   }
-  .masthead-spine {
+  .hero-expedition {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.625rem;
-    margin: 1.5rem 0 0;
+    gap: 0.75rem;
+    margin: 2rem 0 0;
+    padding: 0.75rem 1rem;
+    background: color-mix(in oklab, var(--paper-2) 60%, transparent);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-card, 4px);
+    width: fit-content;
+    max-width: 100%;
   }
-  .masthead-spine-label {
+  .he-label {
     font-size: 10px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--ink-mute);
   }
-  .masthead-spine-name {
+  .he-name {
     font-family: var(--font-display);
     font-size: 1rem;
     font-weight: 500;
     color: var(--ink);
-    text-decoration: none;
     border-bottom: 1px solid var(--rule);
   }
-  .masthead-spine-name:hover { color: var(--accent); border-bottom-color: var(--accent); }
-
-  .rule-heavy {
-    height: 3px;
-    background: var(--ink);
-    border: 0;
-    margin: 0;
+  .he-name:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .hero-scroll {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 2.5rem 0 0;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .hero-scroll:hover { color: var(--accent); }
+  .hs-arrow { color: var(--accent); }
+  @media (prefers-reduced-motion: no-preference) {
+    .hs-arrow { animation: bob 1.8s var(--ease-in-out, ease) infinite; }
+    @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+  }
+  .hero-sentinel {
+    position: absolute;
+    top: 56px;
+    left: 0;
+    width: 1px;
+    height: 1px;
   }
 
-  /* ── Lead story ────────────────────────────────────────────────────── */
-
-  .lead {
-    --v: var(--v-personal);
-    padding-block: 1.75rem 0.5rem;
+  /* ── ROUTES RAIL ───────────────────────────────────────────────────── */
+  .rail-section { padding-block: clamp(2.5rem, 6vw, 4rem) clamp(2rem, 5vw, 3rem); }
+  .rail-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
   }
-  .lead[data-vertical='dev'] { --v: var(--v-dev); }
-  .lead[data-vertical='finance'] { --v: var(--v-finance); }
-  .lead[data-vertical='culture'] { --v: var(--v-culture); }
-  .lead[data-vertical='health'] { --v: var(--v-health); }
-  .lead-link { display: grid; gap: 0.625rem; color: var(--ink); text-decoration: none; }
-  .lead-kicker {
-    display: inline-flex; align-items: center; gap: 0.5rem;
-    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-mute);
-  }
-  .lead-tick { width: 8px; height: 8px; background: var(--v); flex: 0 0 auto; }
-  .lead-desk { color: var(--v); font-weight: 500; }
-  .lead-flag { border-left: 1px solid var(--rule); padding-left: 0.5rem; color: var(--accent); }
-  .lead-title {
+  .rail-h {
     font-family: var(--font-display);
-    font-size: clamp(1.875rem, 4.5vw, 2.75rem);
+    font-size: clamp(1.5rem, 3.5vw, 2.25rem);
     font-weight: 600;
     letter-spacing: -0.02em;
-    line-height: 1.08;
+    color: var(--ink);
     margin: 0;
-    max-width: 20ch;
   }
-  .lead-link:hover .lead-title { color: var(--accent); }
-  .lead-dek {
+  .rail-sub {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .rail {
+    display: flex;
+    gap: 1rem;
+    list-style: none;
+    margin: 0;
+    padding: 0 clamp(1.25rem, 4vw, 2rem) 1rem;
+    max-width: calc(var(--container-page, 1100px) + clamp(1.25rem, 4vw, 2rem) * 2);
+    margin-inline: auto;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: clamp(1.25rem, 4vw, 2rem);
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule-strong) transparent;
+    /* route-line under the coupons — a faint dashed thread */
+    background-image: repeating-linear-gradient(
+      to right,
+      var(--rule) 0 8px,
+      transparent 8px 18px
+    );
+    background-size: 100% 1px;
+    background-position: 0 132px;
+    background-repeat: no-repeat;
+  }
+  .rail::-webkit-scrollbar { height: 8px; }
+  .rail::-webkit-scrollbar-thumb { background: var(--rule-strong); border-radius: 4px; }
+
+  .coupon {
+    --v: var(--v-personal);
+    scroll-snap-align: start;
+    flex: 0 0 clamp(240px, 74vw, 320px);
+  }
+  .coupon[data-vertical='dev'] { --v: var(--v-dev); }
+  .coupon[data-vertical='finance'] { --v: var(--v-finance); }
+  .coupon[data-vertical='culture'] { --v: var(--v-culture); }
+  .coupon[data-vertical='health'] { --v: var(--v-health); }
+  .coupon-link {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    height: 100%;
+    padding: 1.125rem 1.25rem 1.25rem;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--v);
+    border-radius: var(--radius-card, 4px);
+    color: var(--ink);
+    transition:
+      transform var(--dur-base, 200ms) var(--ease-out, ease),
+      border-color var(--dur-base, 200ms) ease;
+  }
+  /* perforation notch — the boarding-pass tell */
+  .coupon-link::before,
+  .coupon-link::after {
+    content: '';
+    position: absolute;
+    top: 46px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+  }
+  .coupon-link::before { left: -7px; }
+  .coupon-link::after { right: -7px; }
+  .coupon-link:hover {
+    transform: translateY(-4px);
+    border-color: var(--v);
+  }
+  .coupon-leg {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .coupon-desk {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--v);
+    font-weight: 700;
+  }
+  .coupon-tick { width: 6px; height: 6px; background: var(--v); flex: 0 0 auto; }
+  .coupon-title {
     font-family: var(--font-display);
-    font-size: 1.125rem;
+    font-size: 1.1875rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.24;
+    color: var(--ink);
+  }
+  .coupon-link:hover .coupon-title { color: var(--accent); }
+  .coupon-dek {
+    font-family: var(--font-body);
+    font-size: 14px;
     line-height: 1.5;
     color: var(--ink-mute);
-    margin: 0;
-    max-width: 58ch;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+    flex: 1 1 auto;
   }
-  .lead-meta { display: inline-flex; gap: 0.5rem; font-size: 11px; letter-spacing: 0.06em; color: var(--ink-mute); }
+  .coupon-foot {
+    display: inline-flex;
+    gap: 0.5rem;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--ink-mute);
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--rule);
+  }
+  .coupon-all { flex: 0 0 clamp(200px, 60vw, 240px); }
+  .coupon-all-link {
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.625rem;
+    border-top: 3px solid var(--accent);
+    border-style: dashed;
+    background: transparent;
+  }
+  .coupon-all-link::before, .coupon-all-link::after { display: none; }
+  .coupon-all-arrow {
+    font-size: 1.75rem;
+    line-height: 1;
+    color: var(--accent);
+  }
+  .coupon-all-label {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .coupon-all-link:hover { transform: translateY(-4px); border-color: var(--accent); }
+  .coupon-all-link .coupon-foot { border-top: 0; padding-top: 0; }
 
-  /* ── Strata ────────────────────────────────────────────────────────── */
-
-  .stratum { padding-block: 1.75rem 1.75rem; }
+  /* ── STRATA ────────────────────────────────────────────────────────── */
+  .stratum { padding-block: 1.75rem; max-width: 820px; }
   .stratum-h {
     font-family: var(--font-mono);
     font-size: 11px;
@@ -374,72 +570,7 @@ const jsonLd = {
     font-weight: 500;
     margin: 0 0 1.25rem;
   }
-
-  /* ── In progress ──────────────────────────────────────────────────── */
-
-  .progress-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-  }
-  .progress-row { padding: 0; }
-  .progress-link {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
-    gap: 1rem;
-    align-items: baseline;
-    color: var(--ink);
-    text-decoration: none;
-    padding-block: 0.5rem;
-  }
-  .progress-link:hover { color: var(--accent); }
-  .progress-link:hover .progress-meta,
-  .progress-link:hover .progress-ago { color: var(--accent); }
-  .progress-name {
-    font-family: var(--font-display);
-    font-size: 1.0625rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    color: var(--ink);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .progress-meta, .progress-ago {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    color: var(--ink-mute);
-  }
-  .progress-spine-mount { display: inline-flex; }
-
-  @media (max-width: 640px) {
-    .progress-link {
-      grid-template-columns: minmax(0, 1fr) auto;
-      grid-template-areas:
-        'name      ago'
-        'meta      meta'
-        'spine     spine';
-      row-gap: 0.25rem;
-    }
-    .progress-name { grid-area: name; }
-    .progress-meta { grid-area: meta; }
-    .progress-spine-mount { grid-area: spine; }
-    .progress-ago { grid-area: ago; text-align: right; }
-  }
-
-  /* ── Recent ───────────────────────────────────────────────────────── */
-
-  .recent-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-  }
+  .recent-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
   .recent-row {
     --v: var(--v-personal);
     border-bottom: 1px solid color-mix(in oklab, var(--rule) 70%, transparent);
@@ -455,7 +586,6 @@ const jsonLd = {
     gap: 1.25rem;
     align-items: baseline;
     color: var(--ink);
-    text-decoration: none;
     padding-block: 0.875rem;
     padding-left: 0.75rem;
     margin-left: -0.75rem;
@@ -464,9 +594,13 @@ const jsonLd = {
   }
   .recent-link:hover { border-left-color: var(--v); }
   .recent-link:hover .recent-title { color: var(--accent); }
-  .recent-link:hover .recent-date,
-  .recent-link:hover .recent-rt { color: var(--accent); }
-
+  .recent-date {
+    color: var(--ink-mute);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+  .recent-meat { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; }
   .recent-kicker {
     display: inline-flex;
     align-items: center;
@@ -478,31 +612,6 @@ const jsonLd = {
     font-weight: 500;
   }
   .recent-tick { width: 6px; height: 6px; background: var(--v); flex: 0 0 auto; }
-
-  .recent-date {
-    color: var(--ink-mute);
-    font-family: var(--font-mono);
-    font-size: 12px;
-    letter-spacing: 0.04em;
-    position: relative;
-    padding-left: 0.875rem;
-  }
-  /* dateline gutter: coral tick marks the wire-feed timestamp */
-  .recent-date::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0.12em;
-    width: 3px;
-    height: 0.7em;
-    background: var(--cobalt);
-  }
-  .recent-meat {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-    min-width: 0;
-  }
   .recent-title {
     font-family: var(--font-display);
     font-size: 1.125rem;
@@ -511,62 +620,28 @@ const jsonLd = {
     color: var(--ink);
     line-height: 1.3;
   }
-  .recent-dek {
-    font-family: var(--font-body);
-    font-size: 14.5px;
-    color: var(--ink-mute);
-    line-height: 1.5;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow: hidden;
-  }
-  .recent-rt {
+  .recent-ago {
     color: var(--ink-mute);
     font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.04em;
     white-space: nowrap;
   }
-
   @media (max-width: 640px) {
     .recent-link {
       grid-template-columns: minmax(0, 1fr) auto;
-      grid-template-areas:
-        'date   rt'
-        'meat   meat';
+      grid-template-areas: 'date ago' 'meat meat';
       row-gap: 0.25rem;
     }
     .recent-date { grid-area: date; }
-    .recent-rt { grid-area: rt; text-align: right; }
+    .recent-ago { grid-area: ago; text-align: right; }
     .recent-meat { grid-area: meat; }
   }
 
-  .all-link {
-    margin: 1.25rem 0 0;
-    font-family: var(--font-sans);
-    font-size: 13.6px;
-  }
-  .all-link a {
-    color: var(--ink-mute);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    text-decoration-color: var(--rule);
-  }
-  .all-link a:hover { color: var(--accent); text-decoration-color: var(--accent); }
-
-  /* ── By category (one row) ────────────────────────────────────────── */
-
-  .cats-row {
-    margin: 0;
-    line-height: 2;
-    color: var(--ink);
-  }
+  .cats-row { margin: 0; line-height: 2; color: var(--ink); }
   .cats-link {
     --v: var(--v-personal);
     color: var(--ink);
-    text-decoration: none;
     margin-inline: 0.125rem;
   }
   .cats-link[data-vertical='dev'] { --v: var(--v-dev); }
@@ -580,11 +655,6 @@ const jsonLd = {
     font-weight: 500;
     letter-spacing: -0.01em;
   }
-  .cats-count {
-    color: var(--ink-mute);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    margin-left: 0.25rem;
-  }
+  .cats-count { color: var(--ink-mute); font-family: var(--font-mono); font-size: 11px; margin-left: 0.25rem; }
   .cats-dot { color: var(--rule); margin-inline: 0.625rem; }
 </style>

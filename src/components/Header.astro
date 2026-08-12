@@ -3,112 +3,171 @@ import HeaderControls from '~/components/HeaderControls.tsx'
 import MultiSearch from '~/components/MultiSearch.tsx'
 import StatusBanner from '~/components/StatusBanner.astro'
 /*
- * Header — editorial masthead bar ("Signal Press").
+ * Header — OVERLAY EXPEDITION STRIP (archetype: full-bleed hero + overlay nav).
  *
- *   ┌─────────────────────────────────────────────────────────────────┐
- *   │  oriz/blog        LATEST · SERIES · TAGS · ABOUT    ⌘K rss ··· │
- *   └─────────────────────────────────────────────────────────────────┘
+ * A thin transparent strip that floats OVER the full-bleed hero — no opaque
+ * sticky masthead bar. It condenses to a solid mini-bar once the reader scrolls
+ * past the hero (data-condensed toggled by an IntersectionObserver on #hero-end).
  *
- * Left: serif wordmark. Center: mono uppercase nav with orange underline.
- * Right: search (⌘K), rss, ··· overflow. 64px, sticky, paper blur.
+ *   ╔══════════════════════════════════════════════════════════════════════╗
+ *   ║  oriz/atlas   ROUTES · GUIDES · SERIES · FIELD   ⌘K  ⚙            ║  ← over hero
+ *   ╚══════════════════════════════════════════════════════════════════════╝
+ *
+ * Nav renamed to the atlas vocabulary (Routes/Guides/Series/Field), not the
+ * sibling LATEST/SERIES/TAGS/ABOUT. Left: z-strike wordmark. Right: ⌘K + gear.
  */
 import Wordmark from '~/components/Wordmark.astro'
+
+const path = Astro.url.pathname
+const isHome = path === '/'
+const nav = [
+  { href: '/blog/', label: 'Routes', match: (p: string) => p.startsWith('/blog') },
+  { href: '/categories/', label: 'Guides', match: (p: string) => p.startsWith('/categories') },
+  { href: '/series/', label: 'Series', match: (p: string) => p.startsWith('/series') },
+  { href: '/about/', label: 'Field', match: (p: string) => p.startsWith('/about') || p.startsWith('/now') },
+]
 ---
 
 <StatusBanner />
-<header class="site-header" transition:persist="site-header">
-  <div class="container-page header-inner">
+<header
+  class:list={['expedition-strip', { 'is-over-hero': isHome }]}
+  data-condensed={isHome ? 'false' : 'true'}
+  transition:persist="site-header"
+>
+  <div class="strip-inner">
     <div class="brand">
-      <Wordmark subtitle="travel" size={21} href="/" />
+      <Wordmark subtitle="atlas" size={19} href="/" />
     </div>
-    <nav class="header-nav" aria-label="Primary">
-      <a href="/" aria-current={Astro.url.pathname === '/' ? 'page' : undefined}>Latest</a>
-      <a href="/series/" aria-current={Astro.url.pathname.startsWith('/series') ? 'page' : undefined}>Series</a>
-      <a href="/tags/" aria-current={Astro.url.pathname.startsWith('/tags') ? 'page' : undefined}>Tags</a>
-      <a href="/about/" aria-current={Astro.url.pathname.startsWith('/about') ? 'page' : undefined}>About</a>
+    <nav class="strip-nav" aria-label="Primary">
+      {nav.map((n) => (
+        <a href={n.href} aria-current={n.match(path) ? 'page' : undefined}>{n.label}</a>
+      ))}
     </nav>
-    <div class="header-multisearch">
-      <MultiSearch client:idle />
-    </div>
-    <div class="header-controls-mount">
-      <HeaderControls client:idle />
+    <div class="strip-tools">
+      <div class="strip-search"><MultiSearch client:idle /></div>
+      <div class="strip-controls"><HeaderControls client:idle /></div>
     </div>
   </div>
 </header>
 
+{isHome && (
+  <script is:inline>
+    {`(() => {
+      const header = document.querySelector('.expedition-strip');
+      const sentinel = document.getElementById('hero-end');
+      if (!header || !sentinel || !('IntersectionObserver' in window)) {
+        header && header.setAttribute('data-condensed', 'true');
+        return;
+      }
+      const io = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          header.setAttribute('data-condensed', e.isIntersecting ? 'false' : 'true');
+        }
+      }, { rootMargin: '-56px 0px 0px 0px', threshold: 0 });
+      io.observe(sentinel);
+    })()`}
+  </script>
+)}
+
 <style>
-  .site-header {
+  .expedition-strip {
     position: sticky;
     top: 0;
     z-index: 50;
-    background: color-mix(in oklab, var(--paper) 90%, transparent);
-    backdrop-filter: saturate(180%) blur(10px);
-    -webkit-backdrop-filter: saturate(180%) blur(10px);
-    border-bottom: 1px solid var(--rule);
+    border-bottom: 1px solid transparent;
+    transition:
+      background var(--dur-base, 200ms) var(--ease-out, ease),
+      border-color var(--dur-base, 200ms) var(--ease-out, ease),
+      backdrop-filter var(--dur-base, 200ms) ease;
   }
-  .header-inner {
-    height: 64px;
+
+  /* Default (non-home, or condensed): solid map-panel bar. */
+  .expedition-strip[data-condensed='true'] {
+    background: color-mix(in oklab, var(--paper) 88%, transparent);
+    backdrop-filter: saturate(160%) blur(12px);
+    -webkit-backdrop-filter: saturate(160%) blur(12px);
+    border-bottom-color: var(--rule);
+  }
+
+  /* Over the hero: transparent floating strip, light-on-dark ink. */
+  .expedition-strip.is-over-hero[data-condensed='false'] {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom-color: transparent;
+  }
+  .expedition-strip.is-over-hero[data-condensed='false'] :global(.wordmark),
+  .expedition-strip.is-over-hero[data-condensed='false'] .strip-nav a {
+    color: #f2ede0;
+  }
+  .expedition-strip.is-over-hero[data-condensed='false'] :global(.wordmark-sep) {
+    color: color-mix(in oklab, #f2ede0 55%, transparent);
+  }
+
+  .strip-inner {
+    max-width: var(--container-page, 1100px);
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 4vw, 2rem);
+    height: 56px;
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1.25rem;
   }
   .brand {
     flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
   }
-  .header-nav {
+
+  /* Nav: aeronautical mono tabs, thin. */
+  .strip-nav {
     display: none;
     gap: 1.5rem;
-    font-family: var(--font-utility, var(--font-mono));
-    font-size: 12px;
-    letter-spacing: 0.1em;
+    margin-inline: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--color-muted);
   }
-  .header-nav a {
+  .strip-nav a {
     position: relative;
-    padding-block: 0.375rem;
-    color: var(--color-muted);
-    text-decoration: none;
+    padding-block: 0.5rem;
+    color: var(--ink-mute);
     transition: color var(--dur-fast, 120ms) ease;
   }
-  .header-nav a:hover {
-    color: var(--color-accent);
-  }
-  .header-nav a::after {
+  .strip-nav a::after {
     content: '';
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 0;
-    height: 2px;
-    background: var(--color-accent);
+    bottom: 0.25rem;
+    height: 1.5px;
+    background: var(--accent);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform var(--dur-fast, 120ms) ease;
   }
-  .header-nav a:hover::after,
-  .header-nav a[aria-current='page']::after {
-    transform: scaleX(1);
+  .strip-nav a:hover { color: var(--accent); }
+  .strip-nav a:hover::after,
+  .strip-nav a[aria-current='page']::after { transform: scaleX(1); }
+  .strip-nav a[aria-current='page'] { color: var(--accent); }
+  .is-over-hero[data-condensed='false'] .strip-nav a:hover,
+  .is-over-hero[data-condensed='false'] .strip-nav a[aria-current='page'] {
+    color: var(--sun);
   }
-  .header-nav a[aria-current='page'] {
-    color: var(--color-accent);
+  .is-over-hero[data-condensed='false'] .strip-nav a::after { background: var(--sun); }
+
+  .strip-tools {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
   }
+  .strip-search,
+  .strip-controls { display: inline-flex; align-items: center; }
+
   @media (min-width: 768px) {
-    .header-nav { display: inline-flex; align-items: center; }
-  }
-  .header-controls-mount {
-    margin-left: auto;
-    display: inline-flex;
-    align-items: center;
-  }
-  .header-multisearch {
-    margin-left: auto;
-    display: inline-flex;
-    align-items: center;
-  }
-  .header-multisearch + .header-controls-mount {
-    margin-left: 0.75rem;
+    .strip-nav { display: inline-flex; align-items: center; }
+    .strip-tools { margin-left: 0; }
   }
 </style>
