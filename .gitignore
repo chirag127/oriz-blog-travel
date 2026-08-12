@@ -1,0 +1,15 @@
+node_modules
+dist
+.astro
+.wrangler
+.env
+.env.local
+.env.example.lock
+*.log
+
+# Playwright
+playwright-report/
+test-results/
+
+# npm lockfile — repo uses pnpm
+package-lock.json

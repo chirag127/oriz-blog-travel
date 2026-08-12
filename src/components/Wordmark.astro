@@ -1,0 +1,141 @@
+---
+/*
+ * Wordmark — `oriz` set in display serif (Fraunces) with a stamp-vermilion
+ * hairline strike through the `z` glyph — the proofreader's deletion mark,
+ * here reading like a route line drawn across a map.
+ *
+ * The z-strike is the family anchor (kept across sites) but each site owns
+ * its type/palette: on oriz-blog-travel the wordmark is Fraunces with the
+ * passport-stamp vermilion strike; sister sites render their own identity.
+ */
+
+interface Props {
+  /** Sub-section name — rendered after a `/` separator. */
+  subtitle?: string
+  /** Display size in CSS pixels. */
+  size?: number
+  /** Wrap the mark in an <a href="/"> — defaults to '/' when subtitle is set. */
+  href?: string | null
+  /** Render as <h1> (the masthead) rather than <div>. */
+  asHeading?: boolean
+}
+
+const { subtitle, size = 96, href = null, asHeading = false } = Astro.props
+const Tag = asHeading ? 'h1' : ('div' as const)
+---
+
+{
+  href ? (
+    <a class="wordmark-link" href={href} aria-label={subtitle ? `oriz / ${subtitle}` : 'oriz'}>
+      <Tag class="wordmark" style={`--wm-size: ${size}px;`}>
+        <span class="wordmark-mark">
+          <span class="wordmark-letter">o</span>
+          <span class="wordmark-letter">r</span>
+          <span class="wordmark-letter">i</span>
+          <span class="wordmark-letter wordmark-z">
+            z
+            <svg class="wordmark-strike" viewBox="0 0 100 40" aria-hidden="true" preserveAspectRatio="none" focusable="false">
+              <path d="M4 30 L96 12 L84 4" />
+            </svg>
+          </span>
+        </span>
+        {subtitle && (
+          <>
+            <span class="wordmark-sep" aria-hidden="true">
+              /
+            </span>
+            <span class="wordmark-sub">{subtitle}</span>
+          </>
+        )}
+      </Tag>
+    </a>
+  ) : (
+    <Tag class="wordmark" style={`--wm-size: ${size}px;`}>
+      <span class="wordmark-mark">
+        <span class="wordmark-letter">o</span>
+        <span class="wordmark-letter">r</span>
+        <span class="wordmark-letter">i</span>
+        <span class="wordmark-letter wordmark-z">
+          z
+          <svg class="wordmark-strike" viewBox="0 0 100 40" aria-hidden="true" preserveAspectRatio="none" focusable="false">
+            <path d="M4 30 L96 12 L84 4" />
+          </svg>
+        </span>
+      </span>
+      {subtitle && (
+        <>
+          <span class="wordmark-sep" aria-hidden="true">
+            /
+          </span>
+          <span class="wordmark-sub">{subtitle}</span>
+        </>
+      )}
+    </Tag>
+  )
+}
+
+<style>
+  .wordmark-link {
+    display: inline-block;
+    color: inherit;
+    text-decoration: none;
+  }
+  .wordmark {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.18em;
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--wm-size, 96px);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+  }
+  .wordmark-mark {
+    display: inline-flex;
+    align-items: baseline;
+  }
+  .wordmark-letter {
+    position: relative;
+    display: inline-block;
+  }
+  .wordmark-z {
+    padding-inline: 0.15em;
+  }
+  .wordmark-strike {
+    position: absolute;
+    left: -0.06em;
+    right: -0.06em;
+    top: 42%;
+    width: calc(100% + 0.12em);
+    height: 0.42em;
+    overflow: visible;
+    pointer-events: none;
+    transform: rotate(-2deg);
+  }
+  .wordmark-strike path {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+  @media (max-width: 480px) {
+    .wordmark-strike path {
+      stroke-width: 5;
+    }
+  }
+  .wordmark-sep {
+    margin-inline: 0.2em;
+    color: var(--ink-mute);
+    font-weight: 400;
+  }
+  .wordmark-sub {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+</style>

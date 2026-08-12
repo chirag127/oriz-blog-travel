@@ -1,0 +1,35 @@
+---
+import BookmarksIsland from '~/components/blog/BookmarksIsland'
+/**
+ * /bookmarks — all the posts the current user has saved.
+ * Uses the React BookmarksList island so live Firestore updates flow
+ * straight in. Anon users see localStorage entries.
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro'
+---
+
+<BaseLayout
+  title="Bookmarks — Blog"
+  description="Posts you've saved from this blog."
+  noindex={true}
+  hideSidebar={true}
+>
+  <section class="page">
+    <header class="page-head">
+      <h1>Bookmarks</h1>
+      <p class="lede">
+        Your saved posts. Sign in to sync across devices, or stay anonymous and
+        we'll keep them in this browser only.
+      </p>
+    </header>
+
+    <BookmarksIsland client:only="react" />
+  </section>
+</BaseLayout>
+
+<style>
+  .page { padding-block: 2.5rem 4rem; max-width: var(--container-page, 1200px); margin-inline: auto; padding-inline: clamp(1rem, 4vw, 2rem); }
+  .page-head { margin-bottom: 1.5rem; }
+  h1 { font-family: var(--font-serif); font-size: clamp(1.75rem, 4vw, 2.25rem); font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+  .lede { color: var(--color-fg-muted); margin: 0.5rem 0 0; max-width: 60ch; }
+</style>

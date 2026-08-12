@@ -1,0 +1,181 @@
+/*
+ * UI overrides — site-local styling for the AccountPanel / FinishSignIn /
+ * ContactForm islands. The upstream packages ship UNSTYLED markup with
+ * `[data-*]` hooks; this file paints them in the blog palette
+ * (cobalt accent on cream paper).
+ *
+ * Hook contract documented in home/knowledge/anchor-patterns.md.
+ */
+
+/* ── AccountPanel (Clerk-backed — data-oriz-account-* hooks) ────── */
+
+[data-oriz-account] {
+  display: block;
+  margin-block: 2rem;
+  padding: 1.75rem;
+  background: transparent;
+  border: 1px solid var(--rule);
+  font-family: var(--font-sans);
+  color: var(--ink);
+}
+
+[data-oriz-account-state="loading"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding-block: 2.5rem;
+}
+[data-oriz-account-spinner] {
+  display: inline-block;
+  font-size: 1.25rem;
+  color: var(--ink-mute);
+  animation: spin 1.2s linear infinite;
+}
+
+[data-oriz-account-heading] {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+  margin: 0 0 0.75rem;
+  color: var(--ink);
+}
+
+[data-oriz-account-me] {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+[data-oriz-account-name] {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.0625rem;
+  color: var(--ink);
+}
+[data-oriz-account-email] {
+  margin: 0.125rem 0 0;
+  color: var(--ink-mute);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+[data-oriz-account-note] {
+  margin-block: 1rem 0;
+  color: var(--ink-mute);
+  line-height: 1.55;
+  font-size: 0.9375rem;
+}
+
+[data-oriz-account-action="sign-in"] {
+  align-self: flex-start;
+  margin-top: 0.5rem;
+  height: 44px;
+  padding-inline: 1.5rem;
+  background: var(--brand);
+  color: var(--color-accent-fg, #fff);
+  border: 1px solid var(--brand);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+[data-oriz-account-action="sign-in"]:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+[data-oriz-account-action="sign-in"]:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* ── ContactForm ────────────────────────────────────────────────────── */
+
+form[data-oriz-contact] {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-block: 2rem;
+  font-family: var(--font-sans);
+}
+[data-oriz-contact-honeypot] {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+}
+[data-oriz-contact-field] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+[data-oriz-contact-field] > span:first-child {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-mute);
+  font-weight: 500;
+}
+[data-oriz-contact-field] input,
+[data-oriz-contact-field] textarea {
+  padding: 0.625rem 0.875rem;
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 1rem;
+}
+[data-oriz-contact-field] input:focus,
+[data-oriz-contact-field] textarea:focus {
+  outline: none;
+  border-color: var(--cobalt);
+}
+[data-oriz-contact-field] textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+[data-oriz-contact-error] {
+  color: var(--vermilion);
+  font-size: 0.8125rem;
+  margin: 0;
+}
+[data-oriz-contact-submit] {
+  align-self: flex-start;
+  height: 44px;
+  padding-inline: 1.5rem;
+  background: var(--cobalt);
+  color: var(--paper);
+  border: 1px solid var(--cobalt);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+[data-oriz-contact-submit]:hover:not(:disabled) {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+[data-oriz-contact-submit]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+[data-oriz-contact-success] {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in oklab, var(--cobalt) 15%, transparent);
+  border: 1px solid var(--cobalt);
+  color: var(--ink);
+  font-size: 0.9375rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-account-spinner] {
+    animation: none;
+  }
+}

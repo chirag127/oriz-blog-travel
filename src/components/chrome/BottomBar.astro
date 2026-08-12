@@ -1,0 +1,38 @@
+---
+/*
+ * BottomBar — mobile-only fixed nav with 4-5 action items.
+ *
+ * Props:
+ *   actions: { icon: string, label: string, href: string, active?: boolean }[]
+ *
+ * Hidden >=768px; visible <768px.
+ */
+export interface BottomBarAction {
+  icon: string
+  label: string
+  href: string
+  active?: boolean
+}
+interface Props {
+  actions: BottomBarAction[]
+}
+const { actions } = Astro.props
+---
+<nav class="bottom-bar" aria-label="primary mobile">
+  {actions.map((a) => (
+    <a href={a.href} class:list={["bb-item", a.active && 'is-active']} aria-current={a.active ? 'page' : undefined}>
+      <span class="bb-icon" aria-hidden="true">{a.icon}</span>
+      <span class="bb-label">{a.label}</span>
+    </a>
+  ))}
+</nav>
+<style>
+  .bottom-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; height: 56px; padding-bottom: env(safe-area-inset-bottom, 0px); background: color-mix(in oklab, var(--paper) 94%, transparent); border-top: 1px solid var(--rule); backdrop-filter: blur(12px); }
+  .bb-item { flex: 1; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 44px; color: var(--ink-mute); text-decoration: none; font-size: 11px; transition: color var(--dur-fast) ease; }
+  .bb-item.is-active { color: var(--color-accent, var(--accent)); }
+  .bb-icon { font-family: var(--font-mono); font-size: 11px; line-height: 1; letter-spacing: 0.04em; text-transform: uppercase; }
+  .bb-item:hover, .bb-item:focus-visible { color: var(--accent); }
+  .bb-label { font-family: var(--font-mono); letter-spacing: 0.02em; }
+  @media (prefers-reduced-motion: reduce) { .bb-item { transition: none; } }
+  @media (max-width: 767px) { .bottom-bar { display: flex; } }
+</style>

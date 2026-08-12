@@ -1,0 +1,27 @@
+{
+  "name": "oriz Travel",
+  "short_name": "oriz Travel",
+  "description": "Field notes for Indian travellers — budget routes, solo-travel safety, and digital-nomad visas, logged mile by mile.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f2e2b",
+  "theme_color": "#0f2e2b",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["travel", "education", "lifestyle"],
+  "lang": "en"
+}

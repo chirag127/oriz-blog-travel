@@ -1,0 +1,119 @@
+---
+/**
+ * /now — current focus areas, per the nownownow.com convention.
+ *
+ * This page is a recruiter-facing snapshot of what I'm working on right
+ * now. Update the "Last updated" line + content whenever priorities
+ * shift (target cadence: monthly).
+ *
+ * Style mirrors `/about` — single-column long-form prose, no sidebar.
+ */
+import BaseLayout from '~/layouts/BaseLayout.astro'
+
+const lastUpdated = '2026-06-20'
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'Now — Chirag Singhal',
+  url: 'https://blog.oriz.in/now/',
+  description: 'What Chirag Singhal is currently working on, learning, and building.',
+  dateModified: lastUpdated,
+}
+---
+
+<BaseLayout
+  title="Now — Blog"
+  description="What I'm working on right now — current focus areas across the oriz family of sites."
+  jsonLd={jsonLd}
+  hideSidebar={true}
+>
+  <header class="page-head">
+    <p class="eyebrow"><a href="/">Blog</a> / Now</p>
+    <h1>Now</h1>
+    <p class="updated">Last updated <time datetime={lastUpdated}>{lastUpdated}</time></p>
+  </header>
+
+  <article class="prose">
+    <p class="lede">
+      A snapshot of what I'm focused on right now — a
+      <a href="https://nownownow.com/about" rel="noopener noreferrer">/now page</a>
+      in the Derek Sivers tradition. Updated roughly monthly.
+    </p>
+
+    <h2>Building</h2>
+    <p>
+      Maintaining the <strong>oriz family</strong> of static sites — the
+      blog (this one), <a href="https://oriz.in">oriz.in</a> home, finance
+      calculators, book summaries, image tools, and the cross-post engine
+      that keeps RSS in sync with dev.to / Bluesky / Buttondown / Reddit.
+      The current batch focuses on consolidating the design system,
+      hardening the markdown pipeline (Astro 6.4 + unified migration), and
+      shipping the public lifestream that auto-tracks code, reading, and
+      health stats — no manual journaling.
+    </p>
+
+    <h2>Learning</h2>
+    <p>
+      Going deep on agentic LLM workflows (Claude Agent SDK, MCP server
+      design), Rust-powered build tooling (the new Sätteri markdown
+      processor, biome, tokei), and practical Cloudflare Workers patterns
+      for free-tier static-first architectures. On the side: distributed
+      systems theory and a slow walk through the
+      <a href="/series/it-career-guide/">IT career guide</a> series I'm
+      writing as I learn.
+    </p>
+
+    <h2>Day job</h2>
+    <p>
+      Backend systems and cloud platforms. Off-hours go to writing,
+      building these tools, and reading.
+    </p>
+
+    <h2>Where to find me</h2>
+    <p>
+      <a href="/about/">About</a> ·
+      <a href="https://github.com/chirag127">GitHub</a> ·
+      <a href="/rss.xml">RSS</a> ·
+      <a href="/contact/">Contact</a>
+    </p>
+  </article>
+</BaseLayout>
+
+<style>
+  .page-head { margin-bottom: 1.5rem; }
+  .eyebrow {
+    color: var(--color-fg-muted);
+    font-size: 0.875rem;
+    margin: 0 0 0.5rem;
+  }
+  .eyebrow a { color: inherit; text-decoration: none; }
+  .eyebrow a:hover { color: var(--color-fg); }
+  h1 {
+    font-family: var(--font-serif);
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1.15;
+  }
+  .updated {
+    color: var(--color-fg-soft);
+    font-size: 0.875rem;
+    margin: 0.5rem 0 0;
+  }
+  .prose { max-width: 60ch; }
+  .prose .lede {
+    color: var(--color-fg-muted);
+    font-size: 1.0625rem;
+    margin: 1.5rem 0 0;
+  }
+  .prose h2 {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 2rem 0 0.5rem;
+  }
+  .prose p { margin: 0.75rem 0; line-height: 1.7; }
+  .prose a { color: var(--color-accent); }
+</style>

@@ -1,0 +1,32 @@
+---
+import AccountIsland from '~/components/AccountIsland'
+import BaseLayout from '~/layouts/BaseLayout.astro'
+---
+
+<BaseLayout
+  title="Account — oriz / blog"
+  description="Sign in to oriz. One account works across every oriz site."
+  noindex={true}
+>
+  <header class="page-head">
+    <p class="eyebrow"><a href="/">Blog</a> / Account</p>
+    <h1>Account</h1>
+    <p class="lede">
+      One sign-in works across every oriz site (oriz.in, blog.oriz.in,
+      books.oriz.in, …). Bookmarks and reading history follow you.
+    </p>
+  </header>
+
+  <section class="panel">
+    <AccountIsland client:only="react" siteName="oriz / blog" />
+  </section>
+</BaseLayout>
+
+<style>
+  .panel {
+    padding-block: 1.5rem 4rem;
+    max-width: var(--container-prose);
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 4vw, 1.25rem);
+  }
+</style>

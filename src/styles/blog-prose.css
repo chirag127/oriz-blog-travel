@@ -1,0 +1,196 @@
+/*
+ * blog-prose.css — long-form article typography ("Signal Press" editorial).
+ *
+ * Serif display headings (Source Serif 4), Inter body on a ~68ch measure,
+ * international-orange links + rule, JetBrains Mono code + metadata, and an
+ * optional serif drop-cap for the opening paragraph.
+ *
+ * Colors/types resolve from the .post-shell scope in [...slug].astro
+ * (light/dark/sepia/hc variants live there). Selectors scoped to .prose-blog.
+ *
+ * Fonts are bundled via @fontsource-variable/* in global.css — no webfont
+ * @import here (that was a redundant second network fetch; removed 2026-08-05).
+ */
+
+.prose-blog {
+  color: var(--ink);
+  font-family: var(--font-body, 'Inter Variable', 'Inter', system-ui, sans-serif);
+  font-size: 17.5px;
+  line-height: 1.72;
+  max-width: 68ch;
+  margin-inline: auto;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+}
+
+/* Lede — first paragraph slightly larger; optional serif drop-cap. */
+.prose-blog > p:first-of-type {
+  font-size: 1.08em;
+  line-height: 1.62;
+  color: var(--ink);
+}
+.prose-blog > p:first-of-type::first-letter {
+  float: left;
+  font-family: var(--font-display, 'Source Serif 4', Georgia, serif);
+  font-weight: 600;
+  font-size: 3.1em;
+  line-height: 0.82;
+  padding: 0.06em 0.12em 0 0;
+  color: var(--cobalt, #e63a1f);
+}
+.prose-blog .drop-cap {
+  font-size: 1.075em;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.prose-blog p {
+  margin: 0 0 1.25em;
+}
+
+.prose-blog h2,
+.prose-blog h3,
+.prose-blog h4 {
+  font-family: var(--font-display, 'Source Serif 4', Georgia, serif);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.22;
+  color: var(--ink);
+}
+.prose-blog h2 {
+  font-size: 1.75em;
+  margin: 2.25em 0 0.7em;
+}
+.prose-blog h3 {
+  font-size: 1.35em;
+  margin: 1.9em 0 0.5em;
+}
+.prose-blog h4 {
+  font-size: 1.12em;
+  margin: 1.6em 0 0.5em;
+}
+
+.prose-blog a {
+  color: var(--cobalt);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklab, var(--cobalt) 40%, transparent);
+  transition: text-decoration-color 120ms ease;
+}
+.prose-blog a:hover {
+  text-decoration-color: var(--cobalt);
+}
+
+.prose-blog strong {
+  color: var(--ink);
+  font-weight: 650;
+}
+.prose-blog em {
+  font-style: italic;
+}
+
+.prose-blog blockquote {
+  border-left: 3px solid var(--cobalt);
+  padding: 0.25em 0 0.25em 1.1rem;
+  margin: 1.75em 0;
+  color: var(--ink-mute);
+  font-style: italic;
+  font-family: var(--font-display, 'Source Serif 4', Georgia, serif);
+  font-size: 1.0625em;
+}
+.prose-blog blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-blog ul,
+.prose-blog ol {
+  padding-left: 1.5rem;
+  margin: 0 0 1.25em;
+}
+.prose-blog li {
+  margin-bottom: 0.4em;
+}
+.prose-blog li::marker {
+  color: var(--cobalt);
+}
+
+.prose-blog code {
+  font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace);
+  font-size: 0.86em;
+  padding: 0.125em 0.375em;
+  border-radius: 4px;
+  background: var(--brand-soft, color-mix(in oklab, var(--cobalt) 8%, var(--paper-2)));
+  color: var(--ink);
+  font-feature-settings: 'tnum' 1, 'zero' 1, 'calt' 0;
+}
+.prose-blog pre {
+  margin-block: 1.5em;
+  overflow-x: auto;
+}
+.prose-blog pre code {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.prose-blog hr {
+  height: 1px;
+  background: var(--rule);
+  border: 0;
+  margin: 2.5em 0;
+}
+
+.prose-blog img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin-block: 1.5em;
+}
+
+.prose-blog table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-block: 1.5em;
+  font-size: 15px;
+}
+.prose-blog th,
+.prose-blog td {
+  border: 1px solid var(--rule);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+.prose-blog th {
+  background: var(--paper-2);
+  font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace);
+  font-weight: 500;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* expressive-code frame — tint to the editorial surface + orange. */
+.prose-blog .expressive-code {
+  margin-block: 1.5em;
+}
+.prose-blog .expressive-code .frame {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.prose-blog .expressive-code .frame .title {
+  font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace);
+}
+.prose-blog .expressive-code .copy button {
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prose-blog a,
+  .prose-blog .expressive-code .copy button {
+    transition: none;
+  }
+}

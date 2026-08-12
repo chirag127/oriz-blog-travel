@@ -1,0 +1,46 @@
+---
+import SignOutIsland from '~/components/SignOutIsland.tsx'
+import BaseLayout from '~/layouts/BaseLayout.astro'
+---
+
+<BaseLayout
+  title="Sign out — Blog"
+  description="Sign out of the oriz blog."
+  hideSidebar={true}
+  noindex={true}
+>
+  <header class="page-head">
+    <p class="eyebrow"><a href="/">Blog</a> / Sign out</p>
+    <h1>Sign out</h1>
+  </header>
+
+  <article class="prose">
+    <p class="lede">
+      Click the button below to sign out. Your locally-cached bookmarks
+      will remain in the browser.
+    </p>
+
+    <p>
+      <SignOutIsland client:only="react" />
+    </p>
+
+    <p>
+      <a href="/account/">Back to account</a>
+    </p>
+  </article>
+</BaseLayout>
+
+<style>
+  .signout-btn {
+    font-family: var(--font-utility, var(--font-mono));
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.625rem 1.25rem;
+    background: var(--color-accent);
+    color: var(--paper);
+    border: 0;
+    cursor: pointer;
+  }
+  .signout-btn:hover { background: color-mix(in oklab, var(--color-accent) 85%, black); }
+</style>

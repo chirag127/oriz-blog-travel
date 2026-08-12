@@ -1,0 +1,12 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro'
+
+const target = '/legal/privacy/'
+---
+<BaseLayout title="Privacy" noindex={true} hideSidebar={true}>
+  <meta http-equiv="refresh" content={`0; url=${target}`} slot="head" />
+  <article class="prose">
+    <p>Redirecting to <a href={target}>{target}</a>…</p>
+  </article>
+  <script define:vars={{ target }}>window.location.replace(target)</script>
+</BaseLayout>

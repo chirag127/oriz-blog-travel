@@ -1,0 +1,126 @@
+---
+/*
+ * SeriesSpine — the oriz-blog-travel signature: a transit ROUTE LINE.
+ *
+ * Renders series progress as a journey: `●━━●╌╌○` — filled `●` waypoints are
+ * legs already logged (joined by solid `━`/`┃` track), hollow `○` are legs
+ * still ahead (joined by dashed `╌`/`┊` track), and the current position is a
+ * location pin `◉` in stamp-vermilion. It reads left→right (or top→down) like
+ * a metro map: where you've been, where you are, where the route continues.
+ *
+ * Used in four places:
+ *   • Home page on-the-road stratum — one row per series, inline after title
+ *   • Post header meta row — inline, current pin enlarged
+ *   • Post sidenote rail — orientation="vertical", sticky on scroll
+ *   • Footer — orientation="horizontal", small, ink-mute
+ *
+ * Props:
+ *   total      total legs in the route
+ *   published  number of legs logged (filled from the left)
+ *   current    1-based index of the current position to pin (optional)
+ *   size       'sm' (11px footer) | 'md' (default 14px) | 'lg' (header 16px)
+ *   orientation 'horizontal' (default) | 'vertical'
+ */
+
+interface Props {
+  total: number
+  published?: number
+  current?: number
+  size?: 'sm' | 'md' | 'lg'
+  orientation?: 'horizontal' | 'vertical'
+  ariaLabel?: string
+}
+
+const {
+  total,
+  published = 0,
+  current,
+  size = 'md',
+  orientation = 'horizontal',
+  ariaLabel,
+} = Astro.props
+
+// Build an array of dot states. Cap the VISUAL dots so a long series
+// (e.g. 29 parts) doesn't render an unreadable 29-dot row; the aria-label
+// still states the true numbers.
+type Dot = 'filled' | 'hollow' | 'current'
+const MAX_DOTS = 10
+const scale = total > MAX_DOTS ? MAX_DOTS / total : 1
+const visualTotal = Math.min(total, MAX_DOTS)
+const visualPublished = Math.round(published * scale)
+const visualCurrent = current ? Math.max(1, Math.round(current * scale)) : undefined
+const dots: Dot[] = []
+for (let i = 1; i <= visualTotal; i++) {
+  if (i === visualCurrent) dots.push('current')
+  else if (i <= visualPublished) dots.push('filled')
+  else dots.push('hollow')
+}
+
+const label = ariaLabel ?? `Route progress: ${published} of ${total} legs logged`
+
+/** A connector is "logged" (solid track) when the leg it bridges is done. */
+function connectorLogged(prev: Dot): boolean {
+  return prev === 'filled' || prev === 'current'
+}
+---
+
+<span
+  class:list={['spine', `spine-${size}`, `spine-${orientation}`]}
+  role="img"
+  aria-label={label}
+>
+  {dots.map((d, i) => (
+    <>
+      {i > 0 && (
+        <span
+          class:list={['spine-connector', connectorLogged(dots[i - 1]) ? 'spine-track-logged' : 'spine-track-ahead']}
+          aria-hidden="true"
+        >
+          {orientation === 'horizontal'
+            ? connectorLogged(dots[i - 1]) ? '━' : '╌'
+            : connectorLogged(dots[i - 1]) ? '┃' : '┊'}
+        </span>
+      )}
+      <span class={`spine-dot spine-dot-${d}`} aria-hidden="true">
+        {d === 'filled' ? '●' : d === 'current' ? '◉' : '○'}
+      </span>
+    </>
+  ))}
+</span>
+
+<style>
+  .spine {
+    font-family: var(--font-mono);
+    font-feature-settings: 'tnum' 1, 'zero' 1, 'calt' 0;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+  .spine-horizontal {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.05em;
+  }
+  .spine-vertical {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.05em;
+  }
+
+  .spine-sm { font-size: 11px; }
+  .spine-md { font-size: 14px; }
+  .spine-lg { font-size: 16px; }
+
+  .spine-connector { color: var(--rule); }
+  .spine-track-logged { color: color-mix(in oklab, var(--accent) 55%, var(--ink-mute)); }
+  .spine-track-ahead { color: var(--rule); letter-spacing: 0.12em; }
+  .spine-dot-filled { color: var(--accent, var(--cobalt, #e63a1f)); }
+  .spine-dot-hollow { color: var(--ink-mute); }
+  .spine-dot-current {
+    color: var(--accent, var(--cobalt, #e63a1f));
+    font-size: 1.35em;
+    line-height: 0.7;
+    transform: translateY(0.04em);
+  }
+</style>

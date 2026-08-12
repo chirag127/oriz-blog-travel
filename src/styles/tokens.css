@@ -1,0 +1,265 @@
+/*
+ * tokens.css — oriz-blog-travel identity ("Field Log", 2026-08-12).
+ *
+ * A traveller's logbook meets a transit-ticket system. Deliberately DISTINCT
+ * from the sister oriz-blog ("Signal Press": amber + Source Serif on near-black)
+ * and every other oriz.in app. Per the design-diversity rule each site owns
+ * its identity:
+ *
+ *   Deep expedition-teal paper · passport-stamp vermilion accent · sun-gold
+ *   altitude flag · warm map-paper text · Fraunces display · Newsreader body ·
+ *   Space Mono coordinates/data.
+ *
+ * Every --color-* name is kept as an alias so chrome/legal/Footer components
+ * (which consume the shell token names) compile unchanged. Theme modes:
+ *   :root                              → dark expedition-teal (default)
+ *   @media (prefers-color-scheme:light)→ light "day-crossing" (unless forced)
+ *   [data-theme="dark"]                → dark, always (overrides system)
+ *   [data-theme="light"]               → light, always
+ *   [data-theme="sepia"]               → warm vellum atlas variant
+ *   [data-theme="hc"]                  → pure black/white high contrast
+ *
+ * Verticals reuse the base mechanism but recolour to a travel legend:
+ *   dest (routes/itineraries) · money (budget) · safety (solo) · nomad (visas).
+ */
+:root {
+  color-scheme: dark;
+
+  /* ── expedition-teal palette ───────────────────────────────────────────
+     Deep sea/atlas teal surface, elevated map-panel, warm paper text. A
+     passport-stamp vermilion is the single loud accent; a sun-gold marks
+     altitude/data flags. Contour-line hairlines. */
+  --brand: #e4572e; /* passport-stamp vermilion — links, active, ticks */
+  --brand-soft: #2a1c17; /* deep tint — hover, chips (dark) */
+  --sun: #f2b705; /* sun-gold — altitude / secondary data flag */
+  --success: #4fb286;
+  --danger-color: #ef6f5c;
+
+  --paper: #0f2e2b; /* deep expedition teal (page bg) */
+  --paper-2: #123a36; /* elevated map panel / surface */
+  --surface: var(--paper-2);
+  --ink: #f2ede0; /* warm map-paper text */
+  --ink-mute: #8fb0a8; /* faded contour secondary */
+  --rule: #23524c; /* contour hairline */
+  --rule-strong: #2f6b62; /* heavier masthead rule */
+
+  /* canonical accent — vermilion. Everything routes through --accent.
+     --cobalt kept ONLY as a back-compat alias → --accent. */
+  --accent: var(--brand);
+  --accent-soft: var(--brand-soft);
+  --cobalt: var(--accent);
+  --brand-tint: var(--brand-soft);
+  --sage: var(--success);
+  --vermilion: var(--brand);
+  --highlighter: var(--sun);
+
+  /* content-vertical marker colours — the travel legend. Thin rules /
+     kicker dots only, never the page accent. */
+  --v-dev: #5ec7c0; /* Routes / itineraries — waypoint teal */
+  --v-finance: #f2b705; /* Budget — sun-gold */
+  --v-culture: #e08cc0; /* Culture / stories — dusk rose */
+  --v-health: #7fb2f0; /* Safety — sky */
+  --v-personal: #8fb0a8; /* Field notes — contour */
+
+  /* semantic passthroughs */
+  --color-bg: var(--paper);
+  --color-fg: var(--ink);
+  --color-accent: var(--brand);
+  --color-accent-fg: #0f2e2b;
+  --color-sage: var(--success);
+  --color-muted: var(--ink-mute);
+  --color-border: var(--rule);
+  --color-bg-soft: var(--paper-2);
+  --color-bg-muted: var(--paper-2);
+  --color-prose: var(--ink);
+  --color-fg-muted: var(--ink-mute);
+  --color-fg-soft: var(--ink-mute);
+
+  /* color alias layer (chrome components read these) */
+  --color-brand-indigo: var(--brand); /* name kept for compatibility */
+  --color-brand-indigo-soft: var(--brand-soft);
+  --color-brand-success: var(--success);
+  --color-brand-danger: var(--danger-color);
+  --color-neutral-0: #0f2e2b;
+  --color-neutral-50: #123a36;
+  --color-neutral-100: #164641;
+  --color-neutral-200: #23524c;
+  --color-neutral-300: #2f6b62;
+  --color-neutral-500: #8fb0a8;
+  --color-neutral-700: #c4d6cf;
+  --color-neutral-900: #f2ede0;
+  --color-neutral-1000: #ffffff;
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-ink-mute: var(--ink-mute);
+  --color-rule: var(--rule);
+
+  /* ── type ───────────────────────────────────────────────────────────
+     Font families are declared ONCE, in global.css @theme (Tailwind emits
+     the --font-* custom properties from there). Not duplicated here.
+     ─────────────────────────────────────────────────────────────────── */
+
+  --text-2xs: 10px;
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-md: 17px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 32px;
+  --text-3xl: 48px;
+
+  /* spacing — 8 steps */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* motion — 3 durations + 3 easings */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* breakpoints */
+  --bp-sm: 480px;
+  --bp-md: 768px;
+  --bp-lg: 1024px;
+  --bp-xl: 1440px;
+
+  /* radii + containers — ticket coupons keep a slight radius */
+  --radius-card: 4px;
+  --radius-button: 4px;
+  --container-page: 1100px;
+}
+
+/* ── LIGHT "day crossing" — system preference, unless user forced dark ── */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --brand: #c8451f;
+    --brand-soft: #f6e6df;
+    --sun: #b8860b;
+    --paper: #f4efe2; /* warm map-vellum */
+    --paper-2: #ece4d2;
+    --ink: #1c3a36; /* deep teal ink on paper */
+    --ink-mute: #5c7a73;
+    --rule: #d3c8b2;
+    --rule-strong: #b9ab8f;
+    --v-dev: #157d76;
+    --v-finance: #b8860b;
+    --v-culture: #a84e86;
+    --v-health: #2f6fb0;
+    --v-personal: #5c7a73;
+    --color-accent-fg: #f4efe2;
+    --color-neutral-50: #ece4d2;
+    --color-neutral-100: #e3d9c3;
+    --color-neutral-200: #d3c8b2;
+    --color-neutral-500: #5c7a73;
+    --color-neutral-700: #34524c;
+    --color-neutral-900: #1c3a36;
+  }
+}
+
+/* ── LIGHT — explicit user override ─────────────────────────────────── */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --brand: #c8451f;
+  --brand-soft: #f6e6df;
+  --sun: #b8860b;
+  --paper: #f4efe2;
+  --paper-2: #ece4d2;
+  --ink: #1c3a36;
+  --ink-mute: #5c7a73;
+  --rule: #d3c8b2;
+  --rule-strong: #b9ab8f;
+  --v-dev: #157d76;
+  --v-finance: #b8860b;
+  --v-culture: #a84e86;
+  --v-health: #2f6fb0;
+  --v-personal: #5c7a73;
+  --color-accent-fg: #f4efe2;
+  --color-neutral-50: #ece4d2;
+  --color-neutral-100: #e3d9c3;
+  --color-neutral-200: #d3c8b2;
+  --color-neutral-500: #5c7a73;
+  --color-neutral-700: #34524c;
+  --color-neutral-900: #1c3a36;
+}
+
+/* ── DARK — explicit user override, wins over system ────────────────── */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --brand: #e4572e;
+  --brand-soft: #2a1c17;
+  --sun: #f2b705;
+  --paper: #0f2e2b;
+  --paper-2: #123a36;
+  --ink: #f2ede0;
+  --ink-mute: #8fb0a8;
+  --rule: #23524c;
+  --rule-strong: #2f6b62;
+  --v-dev: #5ec7c0;
+  --v-finance: #f2b705;
+  --v-culture: #e08cc0;
+  --v-health: #7fb2f0;
+  --v-personal: #8fb0a8;
+  --color-accent-fg: #0f2e2b;
+  --color-neutral-50: #123a36;
+  --color-neutral-100: #164641;
+  --color-neutral-200: #23524c;
+  --color-neutral-500: #8fb0a8;
+  --color-neutral-700: #c4d6cf;
+  --color-neutral-900: #f2ede0;
+}
+
+/* ── SEPIA — warm vellum atlas ──────────────────────────────────────── */
+:root[data-theme='sepia'] {
+  color-scheme: light;
+  --brand: #a83f1c;
+  --brand-soft: #f0dccb;
+  --sun: #a67c00;
+  --paper: #efe3cc;
+  --paper-2: #e6d7ba;
+  --ink: #3a2f22;
+  --ink-mute: #7a6a52;
+  --rule: #d4c199;
+  --rule-strong: #c0aa78;
+  --color-accent-fg: #efe3cc;
+  --color-fg-soft: color-mix(in oklab, var(--ink) 55%, var(--paper));
+  --color-neutral-50: #efe3cc;
+  --color-neutral-100: #e6d7ba;
+  --color-neutral-200: #d4c199;
+  --color-neutral-500: #7a6a52;
+  --color-neutral-700: #574733;
+  --color-neutral-900: #3a2f22;
+}
+
+/* ── HIGH-CONTRAST — pure black/white, hard borders ─────────────────── */
+:root[data-theme='hc'] {
+  color-scheme: light;
+  --brand: #a3300f;
+  --brand-soft: #ffe3db;
+  --sun: #8a6d00;
+  --paper: #ffffff;
+  --paper-2: #ffffff;
+  --ink: #000000;
+  --ink-mute: #2a2a35;
+  --rule: #000000;
+  --rule-strong: #000000;
+  --color-accent-fg: #ffffff;
+  --color-fg-soft: #2a2a35;
+  --color-neutral-50: #ffffff;
+  --color-neutral-100: #ffffff;
+  --color-neutral-200: #000000;
+  --color-neutral-500: #2a2a35;
+  --color-neutral-700: #000000;
+  --color-neutral-900: #000000;
+}

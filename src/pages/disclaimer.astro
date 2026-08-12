@@ -1,0 +1,11 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro'
+
+const target = '/legal/disclaimer/'
+---
+<BaseLayout title="Disclaimer" noindex={true} hideSidebar={true}>
+  <article class="prose">
+    <p>Redirecting to <a href={target}>{target}</a>…</p>
+  </article>
+  <script define:vars={{ target }}>window.location.replace(target)</script>
+</BaseLayout>

@@ -1,0 +1,29 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro'
+---
+
+<BaseLayout
+  title="Sign in — oriz / blog"
+  description="Completing sign-in."
+  noindex={true}
+>
+  <section class="finish">
+    <p>Redirecting to your account…</p>
+  </section>
+</BaseLayout>
+
+<script>
+  // Clerk handles the sign-in callback automatically.
+  // If Clerk has already set the session, just go to account.
+  window.location.replace('/account/')
+</script>
+
+<style>
+  .finish {
+    padding-block: 5rem 4rem;
+    text-align: center;
+    max-width: var(--container-prose);
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 4vw, 1.25rem);
+  }
+</style>

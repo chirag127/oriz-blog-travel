@@ -1,0 +1,169 @@
+---
+/*
+ * BaseLayout — single page shell for every oriz-blog route (v2).
+ *
+ * Per-app divergent Header (sweep #5 revert). Footer + Sidebar wrapper +
+ * BottomBar structure come from @chirag127/astro-chrome; sidebar slot and
+ * bottombar actions are app-specific.
+ */
+import '~/styles/global.css'
+import '~/styles/oriz-ui-overrides.css'
+import 'katex/dist/katex.min.css'
+import '~/styles/tokens.css'
+import { ClientRouter } from 'astro:transitions'
+import AppSidebarContent from '~/components/AppSidebarContent.astro'
+import BottomBar from '~/components/chrome/BottomBar.astro'
+import ConsentBanner from '~/components/chrome/ConsentBanner.astro'
+import FamilyChrome from '~/components/chrome/FamilyChrome.astro'
+import Sidebar from '~/components/chrome/Sidebar.astro'
+import FeedDiscovery from '~/components/FeedDiscovery.astro'
+import Footer from '~/components/Footer.astro'
+import Header from '~/components/Header.astro'
+import { bottomBarActions } from '~/data/bottombar-actions'
+
+interface Props {
+  title?: string
+  description?: string
+  canonical?: string
+  noindex?: boolean
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[]
+  image?: string
+  type?: 'website' | 'article'
+  pubDate?: Date
+  updatedDate?: Date
+  hideSidebar?: boolean
+}
+
+const {
+  title = 'oriz / travel',
+  description = 'Field notes for Indian travellers — budget routes, solo-travel safety, and digital-nomad visas, logged mile by mile.',
+  canonical = `https://travel-blog.oriz.in${Astro.url.pathname}`,
+  noindex = false,
+  jsonLd,
+  image,
+  type = 'website',
+  pubDate,
+  updatedDate,
+  hideSidebar = false,
+} = Astro.props
+
+const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT
+const beaconToken = import.meta.env.PUBLIC_CF_BEACON_TOKEN
+const ga4Id = import.meta.env.PUBLIC_GA4_ID
+const ogImage = image ? new URL(image, 'https://travel-blog.oriz.in').toString() : undefined
+const visibleBottomBarActions = hideSidebar
+  ? bottomBarActions.filter((action) => action.label !== 'Menu')
+  : bottomBarActions
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content="oriz / blog" />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {type === 'article' && pubDate && (
+      <meta property="article:published_time" content={pubDate.toISOString()} />
+    )}
+    {type === 'article' && updatedDate && (
+      <meta property="article:modified_time" content={updatedDate.toISOString()} />
+    )}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@chirag127" />
+
+    <!-- Apply the saved reading theme before paint so the editorial surface never flashes. -->
+    <script is:inline>
+      {`(() => {
+        try {
+          const theme = localStorage.getItem('oriz:theme')
+          if (theme && theme !== 'auto' && ['light', 'dark', 'sepia', 'hc'].includes(theme)) {
+            document.documentElement.dataset.theme = theme
+          }
+        } catch (_) {}
+      })()`}
+    </script>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#f5f6f7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121417" media="(prefers-color-scheme: dark)" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <FeedDiscovery />
+
+    <ClientRouter />
+
+    {jsonLd && (
+      <script
+        is:inline
+        type="application/ld+json"
+        set:html={JSON.stringify(Array.isArray(jsonLd) ? jsonLd : [jsonLd])}
+      />
+    )}
+
+    {adsenseClient && (
+      <script
+        is:inline
+        async
+        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+        crossorigin="anonymous"
+      />
+    )}
+
+    {beaconToken && (
+      <script
+        is:inline
+        defer
+        src="https://static.cloudflareinsights.com/beacon.min.js"
+        data-cf-beacon={`{"token": "${beaconToken}"}`}
+      />
+    )}
+
+    {ga4Id && (
+      <>
+        <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`} />
+        <script is:inline define:vars={{ ga4Id }}>
+          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config',ga4Id);`}
+        </script>
+      </>
+    )}
+  </head>
+  <body>
+    <FamilyChrome slug="oriz-pages-blog-app" title="Blog" accent="var(--accent)" />
+    <a href="#main" class="skip-link">Skip to content</a>
+    <Header />
+    <div class="layout-body">
+      {!hideSidebar && <Sidebar><AppSidebarContent /></Sidebar>}
+      <main id="main"><slot /></main>
+    </div>
+    <Footer />
+    <BottomBar actions={visibleBottomBarActions} />
+    <ConsentBanner />
+
+    <script>
+      if ('serviceWorker' in navigator && location.hostname !== 'localhost') {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {})
+        })
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  .layout-body { display: flex; gap: 0; align-items: flex-start; }
+  .layout-body > main { flex: 1 1 auto; min-width: 0; }
+  @media (max-width: 767px) {
+    .layout-body { display: block; }
+  }
+</style>

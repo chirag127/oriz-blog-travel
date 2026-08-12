@@ -1,0 +1,208 @@
+---
+import { getCollection } from 'astro:content'
+import BaseLayout from '~/layouts/BaseLayout.astro'
+
+/**
+ * Inbound URL aliases — old/external slugs that should resolve to an
+ * existing series folder. Added after dev-server logs flagged 404s for
+ * these (likely indexed by search engines or hand-typed):
+ *
+ *   degrees-while-working-india        → degrees-while-working
+ *   wsl-free-windows-home-server       → windows-native-home-server
+ *   the-2026-it-career-blueprint       → it-career-guide
+ *   puri-travel-guide-from-bhubaneswar → puri-travel-guide-bhubaneswar
+ *
+ * Each alias re-emits the same props as the canonical slug; both URLs
+ * render identical pages so old links don't break.
+ */
+export async function getStaticPaths() {
+  const SERIES_ALIASES: Record<string, string> = {
+    'degrees-while-working-india': 'degrees-while-working',
+    'wsl-free-windows-home-server': 'windows-native-home-server',
+    'the-2026-it-career-blueprint': 'it-career-guide',
+    'puri-travel-guide-from-bhubaneswar': 'puri-travel-guide-bhubaneswar',
+  }
+
+  const allPosts = await getCollection('blog', ({ data }) => !data.draft)
+  const folderMap = new Map<string, typeof allPosts>()
+
+  for (const post of allPosts) {
+    const slashIndex = post.id.indexOf('/')
+    if (slashIndex === -1) continue
+    const folder = post.id.substring(0, slashIndex)
+    const existing = folderMap.get(folder) ?? []
+    existing.push(post)
+    folderMap.set(folder, existing)
+  }
+
+  const canonicalEntries = [...folderMap.entries()].map(([folder, posts]) => ({
+    params: { slug: folder },
+    props: { posts },
+  }))
+
+  // Emit alias slugs that point at an existing folder.
+  const aliasEntries = Object.entries(SERIES_ALIASES).flatMap(([alias, target]) => {
+    const posts = folderMap.get(target)
+    if (!posts) return []
+    return [{ params: { slug: alias }, props: { posts } }]
+  })
+
+  return [...canonicalEntries, ...aliasEntries]
+}
+
+const { slug } = Astro.params
+const { posts } = Astro.props
+
+// Posts share a common folder prefix (the canonical slug). When this
+// route was reached via an alias (e.g. `degrees-while-working-india` →
+// `degrees-while-working`), `slug` won't match the post folder — derive
+// the real folder from the first post's id so index/non-index detection
+// still works.
+const canonicalSlug = posts[0].id.substring(0, posts[0].id.indexOf('/'))
+
+const indexPost = posts.find((p) => p.id === `${canonicalSlug}/index` || p.id.endsWith('/index'))
+const representative = indexPost ?? posts[0]
+const seriesTitle = representative.data.title
+const seriesDescription = representative.data.description
+const seriesCategory = representative.data.category
+
+const partPosts = posts.filter((p) => p.id !== `${canonicalSlug}/index` && !p.id.endsWith('/index'))
+
+const sortedParts = [...partPosts].sort((a, b) => {
+  const partA = a.data.part
+  const partB = b.data.part
+  if (partA != null && partB != null) {
+    return Number(partA) - Number(partB)
+  }
+  return a.id.localeCompare(b.id, undefined, { numeric: true, sensitivity: 'base' })
+})
+
+function fmtDate(d: Date): string {
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+---
+
+<BaseLayout title={seriesTitle} description={seriesDescription}>
+  <div class="page">
+    <nav aria-label="Breadcrumb" class="crumbs">
+      <a href="/series/">← All series</a>
+    </nav>
+
+    <header class="page-head">
+      <p class="eyebrow">Series · {seriesCategory}</p>
+      <h1>{seriesTitle}</h1>
+      <p class="lede">{seriesDescription}</p>
+      <p class="stats">{sortedParts.length} part{sortedParts.length !== 1 ? 's' : ''}</p>
+      {sortedParts.length > 0 && (
+        <a href={`/blog/${sortedParts[0].id}`} class="btn btn-primary">Start with part 1 →</a>
+      )}
+    </header>
+
+    {indexPost && (
+      <a class="overview" href={`/blog/${indexPost.id}`}>
+        <span class="overview-icon" aria-hidden="true">📖</span>
+        <span class="overview-text">
+          <strong>Series overview &amp; table of contents</strong>
+          <span class="overview-desc">{indexPost.data.description}</span>
+        </span>
+        <span class="overview-arrow" aria-hidden="true">→</span>
+      </a>
+    )}
+
+    <h2 class="section-h">All parts</h2>
+    {sortedParts.length === 0 ? (
+      <p class="muted">No parts published yet.</p>
+    ) : (
+      <ol class="part-list">
+        {sortedParts.map((post, index) => (
+          <li>
+            <a class="part-card" href={`/blog/${post.id}`}>
+              <span class="part-num">Part {post.data.part ?? index + 1}</span>
+              <span class="part-title">{post.data.title}</span>
+              <span class="part-desc">{post.data.description}</span>
+              <time class="part-date" datetime={post.data.pubDate.toISOString()}>{fmtDate(post.data.pubDate)}</time>
+            </a>
+          </li>
+        ))}
+      </ol>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .page { padding-block: 2.5rem 4rem; }
+  .crumbs { margin-bottom: 1rem; }
+  .crumbs a { color: var(--color-fg-muted); font-size: 0.875rem; text-decoration: none; }
+  .crumbs a:hover { color: var(--color-fg); }
+  .page-head { margin-bottom: 2rem; }
+  .eyebrow {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    background: var(--color-bg-muted);
+    border-radius: 0.25rem;
+    color: var(--color-fg-muted);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.75rem;
+  }
+  h1 { font-family: var(--font-serif); font-size: clamp(2rem, 5vw, 2.75rem); font-weight: 600; letter-spacing: -0.02em; margin: 0; line-height: 1.15; }
+  .lede { color: var(--color-fg-muted); margin: 0.75rem 0 0.5rem; max-width: 60ch; font-size: 1.0625rem; }
+  .stats { color: var(--color-fg-soft); font-size: 0.875rem; margin: 0 0 1.5rem; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    height: 40px; padding-inline: 1.125rem;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-button);
+    color: var(--color-fg);
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .btn-primary { background: var(--color-accent); color: var(--color-accent-fg); border-color: var(--color-accent); }
+  .btn-primary:hover { color: var(--color-accent-fg); }
+  .overview {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 1rem 1.25rem;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    color: var(--color-fg);
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+  }
+  .overview:hover { border-color: color-mix(in oklab, var(--color-accent) 50%, var(--color-border)); }
+  .overview-icon { font-size: 1.25rem; }
+  .overview-text { display: grid; gap: 0.125rem; }
+  .overview-desc { color: var(--color-fg-muted); font-size: 0.875rem; }
+  .overview-arrow { color: var(--color-fg-soft); }
+  .section-h { font-family: var(--font-serif); font-size: 1.25rem; font-weight: 600; margin: 1.5rem 0 1rem; }
+  .part-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.625rem; counter-reset: parts; }
+  .part-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    column-gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    color: var(--color-fg);
+    text-decoration: none;
+  }
+  .part-card:hover { border-color: color-mix(in oklab, var(--color-accent) 50%, var(--color-border)); }
+  .part-num {
+    grid-row: span 2; align-self: center;
+    color: var(--color-fg-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .part-title { font-weight: 600; font-size: 1rem; }
+  .part-desc { grid-column: 2 / 3; color: var(--color-fg-muted); font-size: 0.875rem; }
+  .part-date { grid-row: span 2; align-self: center; color: var(--color-fg-soft); font-size: 0.8125rem; }
+  .muted { color: var(--color-fg-muted); }
+</style>
