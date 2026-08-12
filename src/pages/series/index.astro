@@ -47,6 +47,11 @@ const series = [...folderMap.entries()].map(([folder, posts]) => {
   }
 })
 series.sort((a, b) => b.latestDate.valueOf() - a.latestDate.valueOf())
+
+// No multi-part series on this blog → don't show an empty shell.
+if (series.length === 0) {
+  return Astro.redirect('/blog/', 302)
+}
 ---
 
 <BaseLayout title="Series — Blog" description="Browse multi-part blog series.">

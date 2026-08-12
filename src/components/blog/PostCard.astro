@@ -1,27 +1,31 @@
 ---
 /**
- * PostCard — editorial listing entry ("Signal Press"). One hairline-ruled
- * row (no rounded card, no shadow, no radius): a vertical-coloured kicker
- * rule + desk label, a serif headline, a one-line dek, and a mono meta foot
- * (date · reading time). Used by every listing (index, tag, category,
- * related). The whole entry is one link; the desk kicker deep-links to the
- * category.
+ * PostCard — "Field Log" dispatch entry (travel archetype).
+ *
+ * A boarding-pass row: vertical kicker with a destination tick, serif
+ * headline, dek, and a mono meta foot. A faint corner perforation mark
+ * (::before pseudo) echoes the coupon aesthetic from the homepage rail.
+ * The dispatch number appears as a corner tag so the list reads like a
+ * logbook ledger.
  */
 import type { CollectionEntry } from 'astro:content'
 import { formatPostDate, postVertical, slugifyTag, verticalLabel } from '~/lib/blog'
 
 export interface Props {
   post: CollectionEntry<'blog'>
+  index?: number
 }
 
-const { post } = Astro.props
+const { post, index } = Astro.props
 const { title, description, pubDate, category, readingTime } = post.data
 const href = `/blog/${post.id}`
 const catHref = `/categories/${slugifyTag(category)}/`
 const vert = postVertical(post)
+const dispatchNo = typeof index === 'number' ? String(index + 1).padStart(3, '0') : undefined
 ---
 
 <article class="post-card" data-vertical={vert}>
+  {dispatchNo && <span class="post-card-no mono" aria-hidden="true">{dispatchNo}</span>}
   <a class="post-card-link" href={href}>
     <span class="post-card-kicker">
       <span class="post-card-tick" aria-hidden="true"></span>
@@ -49,10 +53,23 @@ const vert = postVertical(post)
   .post-card[data-vertical='culture'] { --v: var(--v-culture); }
   .post-card[data-vertical='health'] { --v: var(--v-health); }
 
+  /* dispatch number tag — top-right corner, rotated mono stamp */
+  .post-card-no {
+    position: absolute;
+    top: 1.125rem;
+    right: 0;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    opacity: 0.45;
+    user-select: none;
+  }
+
   .post-card-link {
     display: grid;
     gap: 0.5rem;
-    padding: 1.125rem 0 1.25rem 0.875rem;
+    padding: 1.125rem 2.5rem 1.25rem 0.875rem;
     text-decoration: none;
     color: var(--ink);
     border-left: 2px solid transparent;
@@ -77,6 +94,8 @@ const vert = postVertical(post)
     height: 7px;
     background: var(--v);
     flex: 0 0 auto;
+    /* diamond waypoint shape instead of square */
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   }
   .post-card-desk { color: var(--v); font-weight: 500; }
   .post-card-cat {
@@ -118,6 +137,10 @@ const vert = postVertical(post)
     font-size: 11px;
     letter-spacing: 0.06em;
     color: var(--ink-mute);
+    /* dashed separator above foot — perforation line */
+    padding-top: 0.5rem;
+    border-top: 1px dashed color-mix(in oklab, var(--rule) 80%, transparent);
+    width: fit-content;
   }
   .post-card-rt::before {
     content: '·';

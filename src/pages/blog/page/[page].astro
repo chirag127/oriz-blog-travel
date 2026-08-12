@@ -54,9 +54,9 @@ const description = `Page ${page.currentPage} of writing on software, AI agents,
     )}
 
     <ul class="post-list">
-      {page.data.map((p) => (
+      {page.data.map((p, i) => (
         <li>
-          <PostCard post={p} />
+          <PostCard post={p} index={page.start + i} />
         </li>
       ))}
     </ul>

@@ -19,6 +19,7 @@
  */
 import BaseLayout from '~/layouts/BaseLayout.astro'
 import SeriesSpine from '~/components/SeriesSpine.astro'
+import WaypointSticker from '~/components/WaypointSticker.astro'
 import {
   getCategoriesWithCounts,
   getPostsInSeries,
@@ -177,6 +178,18 @@ const jsonLd = {
         <span class="hs-arrow" aria-hidden="true">&#8595;</span>
       </a>
     </div>
+
+    {lead && (
+      <div class="hero-stamp-mount" aria-hidden="true">
+        <WaypointSticker
+          label={lead.data.category?.slice(0, 3).toUpperCase() ?? 'IND'}
+          date={lead.data.pubDate.toISOString()}
+          href={`/blog/${lead.id}`}
+          title={lead.data.title}
+          size="lg"
+        />
+      </div>
+    )}
     <div id="hero-end" class="hero-sentinel" aria-hidden="true"></div>
   </section>
 
@@ -394,6 +407,18 @@ const jsonLd = {
     left: 0;
     width: 1px;
     height: 1px;
+  }
+
+  /* WaypointSticker floating stamp — bottom-right of hero */
+  .hero-stamp-mount {
+    position: absolute;
+    bottom: clamp(2rem, 6vw, 4rem);
+    right: clamp(1.25rem, 6vw, 5rem);
+    z-index: 2;
+    opacity: 0.88;
+  }
+  @media (max-width: 640px) {
+    .hero-stamp-mount { display: none; }
   }
 
   /* ── ROUTES RAIL ───────────────────────────────────────────────────── */

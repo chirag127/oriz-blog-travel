@@ -58,9 +58,9 @@ const jsonLd = {
       <p class="muted">No posts yet — the first one drops shortly.</p>
     ) : (
       <ul class="post-list">
-        {posts.map((p) => (
+        {posts.map((p, i) => (
           <li>
-            <PostCard post={p} />
+            <PostCard post={p} index={i} />
           </li>
         ))}
       </ul>

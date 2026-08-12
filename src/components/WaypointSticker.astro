@@ -1,0 +1,120 @@
+---
+/**
+ * WaypointSticker — signature travel module.
+ *
+ * Renders a circular "passport stamp" badge for a post or place.
+ * Shape: outer ring (dashed), inner content zone, a compass-rose pip at 12 o'clock.
+ * Used on the homepage to spotlight a featured dispatch.
+ *
+ * Props:
+ *   label   — country/region code or short tag (e.g. "IND", "KTM")
+ *   date    — ISO date string shown as the stamp date
+ *   href    — link target
+ *   title   — post/place name inside the stamp
+ */
+export interface Props {
+  label: string
+  date: string
+  href: string
+  title: string
+  size?: 'sm' | 'md' | 'lg'
+}
+
+const { label, date, href, title, size = 'md' } = Astro.props
+const d = new Date(date)
+const stampDate = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()
+---
+
+<a class:list={['waypoint', `waypoint--${size}`]} href={href} aria-label={`Dispatch: ${title}`}>
+  <svg class="wp-ring" viewBox="0 0 120 120" aria-hidden="true">
+    <!-- outer dashed ring -->
+    <circle cx="60" cy="60" r="55" fill="none"
+      stroke="var(--accent)" stroke-width="1.5"
+      stroke-dasharray="4 3" />
+    <!-- inner solid ring -->
+    <circle cx="60" cy="60" r="46" fill="none"
+      stroke="var(--accent)" stroke-width="0.75" opacity="0.55" />
+    <!-- compass pip top -->
+    <path d="M60 4 L63 13 L60 11 L57 13 Z" fill="var(--accent)" />
+    <!-- compass pip bottom -->
+    <path d="M60 116 L57 107 L60 109 L63 107 Z" fill="var(--accent)" opacity="0.4" />
+  </svg>
+  <span class="wp-inner">
+    <span class="wp-code mono">{label}</span>
+    <span class="wp-title">{title}</span>
+    <span class="wp-date mono">{stampDate}</span>
+  </span>
+</a>
+
+<style>
+  .waypoint {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+  .waypoint--sm  { width: 100px; height: 100px; }
+  .waypoint--md  { width: 140px; height: 140px; }
+  .waypoint--lg  { width: 180px; height: 180px; }
+
+  .wp-ring {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .wp-ring {
+      animation: stamp-spin 60s linear infinite;
+    }
+    @keyframes stamp-spin { to { transform: rotate(360deg); transform-origin: center; } }
+  }
+
+  .wp-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    width: 72%;
+    text-align: center;
+  }
+
+  .wp-code {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .waypoint--lg .wp-code { font-size: 12px; }
+
+  .wp-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    color: var(--ink);
+  }
+  .waypoint--sm .wp-title { font-size: 10px; }
+  .waypoint--lg .wp-title { font-size: 15px; }
+
+  .wp-date {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .waypoint--lg .wp-date { font-size: 10px; }
+
+  .waypoint:hover .wp-title { color: var(--accent); }
+  @media (prefers-reduced-motion: no-preference) {
+    .waypoint:hover .wp-ring { animation-duration: 8s; }
+  }
+</style>
