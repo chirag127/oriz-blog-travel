@@ -56,8 +56,6 @@ export default function PostAI({ title }: { title: string }) {
     }
   }
 
-  if (failed && !out) return null
-
   return (
     <div className="post-ai" ref={rootRef}>
       <p className="post-ai-h mono">Read it faster</p>
@@ -76,6 +74,9 @@ export default function PostAI({ title }: { title: string }) {
         ))}
       </div>
       {loading && <p className="post-ai-status">Thinking…</p>}
+      {!loading && failed && !out && (
+        <p className="post-ai-status">AI summary is unavailable right now.</p>
+      )}
       {!loading && out && (
         <div className="post-ai-out" aria-live="polite">
           {out}
