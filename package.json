@@ -25,7 +25,7 @@
     "@astrojs/react": "^5.0.5",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.2.0",
-    "@chirag127/oz-ai": "file:../design-system/packages/oz-ai",
+    "@chirag127/oz-ai": "^0.3.3",
     "@fontsource-variable/fraunces": "^5.3.0",
     "@fontsource-variable/newsreader": "^5.3.0",
     "@fontsource/space-mono": "^5.3.0",
